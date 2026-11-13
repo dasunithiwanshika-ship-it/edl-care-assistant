@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary-maroon: #7A1428;
+  --color-dark-maroon: #5C0D1D;
+  --color-light-maroon: #9E1B34;
+  --color-gold: #F5C518;
+  --color-bg: #F5F6F8;
+  --color-card: #FFFFFF;
+  --color-text-primary: #1A1D20;
+  --color-text-secondary: #687078;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark body {
+  background-color: #0c0f14;
+  color: #e6edf3;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(122, 20, 40, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(122, 20, 40, 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Maroon gradient utilities */
+.bg-maroon-gradient {
+  background: linear-gradient(135deg, #7A1428 0%, #5C0D1D 100%);
+}
+
+.bg-maroon-gradient-light {
+  background: linear-gradient(135deg, #9E1B34 0%, #7A1428 100%);
+}
+
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #F5C518 0%, #E0B310 100%);
+}
