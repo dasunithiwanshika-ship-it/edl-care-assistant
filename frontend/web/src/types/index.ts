@@ -43,14 +43,18 @@ export interface OutageRecord {
   };
 }
 
+export type ChatMode = 'guest' | 'customer';
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
   language: Language;
+  mode?: ChatMode;
   quickReplies?: string[];
   isMockResponse?: boolean;
+  actionRequired?: 'login' | 'pay' | 'bill-details' | 'complaint';
 }
 
 export interface QuickServiceItem {

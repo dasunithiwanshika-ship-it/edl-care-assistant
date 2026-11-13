@@ -109,16 +109,34 @@ export interface TranslationStrings {
     title: string;
     status: string;
     welcomeMsg: string;
+    guestWelcomeMsg: string;
+    customerWelcomeMsg: string;
     inputPlaceholder: string;
     send: string;
     typing: string;
     disclaimer: string;
     suggestedQuestionsTitle: string;
+    guestModeLabel: string;
+    customerModeLabel: string;
+    guestModeDesc: string;
+    customerModeDesc: string;
+    switchModeNotice: string;
+    viewFeatureMatrix: string;
+    loginRequiredMsg: string;
     quickReplies: {
       highBill: string;
       outageArea: string;
       reportBreakdown: string;
       solarCapacity: string;
+      understandBill: string;
+      tariffExpl: string;
+      safetyGuide: string;
+      generalOutage: string;
+      guestBillCheck: string;
+      myBill: string;
+      myConsumption: string;
+      trackComplaint: string;
+      mySolar: string;
     };
     mockAnswers: {
       highBill: string;
@@ -126,6 +144,15 @@ export interface TranslationStrings {
       reportBreakdown: string;
       solarCapacity: string;
       defaultFallback: string;
+      understandBill: string;
+      tariffExpl: string;
+      safetyGuide: string;
+      generalOutage: string;
+      guestBillCheck: string;
+      myBill: string;
+      myConsumption: string;
+      trackComplaint: string;
+      mySolar: string;
     };
   };
 }
@@ -223,17 +250,35 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     chatbot: {
       title: "EDL Care Assistant",
       status: "Online • AI Support Ready",
-      welcomeMsg: "Ayubowan / Vanakkam! I am your EDL Care AI Assistant. I can help answer questions regarding your electricity bill, ongoing outages, breakdown reports, and solar grid connections. How may I help you today?",
+      welcomeMsg: "Ayubowan / Vanakkam! I am your EDL Care AI Assistant. How may I help you today?",
+      guestWelcomeMsg: "Ayubowan / Vanakkam! I am EDL Care Assistant in Guest Mode. I can help with general electricity FAQs, tariff structures, safety precautions, and outage procedures. Sign in anytime to access personalized account bills.",
+      customerWelcomeMsg: "Hello Dasuni! I am your EDL Care Assistant in Customer Mode. Connected to Account #0412345678 (Home). How can I assist with your bills, consumption, or complaints today?",
       inputPlaceholder: "Type your electricity query in English, Sinhala or Tamil...",
       send: "Send",
       typing: "EDL Assistant is drafting a reply...",
-      disclaimer: "Demo Assistant: Responses are simulated for demonstration purposes.",
-      suggestedQuestionsTitle: "Frequently Asked Questions",
+      disclaimer: "Demo Assistant: Simulated AI responses powered by Gemini & RAG architecture.",
+      suggestedQuestionsTitle: "Suggested Questions",
+      guestModeLabel: "Guest Mode",
+      customerModeLabel: "Customer Mode",
+      guestModeDesc: "Public Knowledge • No login required",
+      customerModeDesc: "Authenticated: Account #0412345678",
+      switchModeNotice: "Switch mode to test Guest vs Authenticated permissions.",
+      viewFeatureMatrix: "Compare Modes",
+      loginRequiredMsg: "🔒 Customer Login Required: In Guest Mode, personal bills and account records are protected. Please sign in to view your outstanding balance, 6-month consumption, and active breakdown complaints.",
       quickReplies: {
         highBill: "Why is my electricity bill high?",
         outageArea: "Is there a power outage in my area?",
         reportBreakdown: "How can I report a breakdown?",
         solarCapacity: "How can I check solar transformer capacity?",
+        understandBill: "How can I understand my electricity bill?",
+        tariffExpl: "Explain domestic electricity tariffs",
+        safetyGuide: "What are essential electrical safety tips?",
+        generalOutage: "How does planned outage maintenance work?",
+        guestBillCheck: "What is my outstanding bill? (Login test)",
+        myBill: "What is my outstanding bill?",
+        myConsumption: "Show my October 2026 consumption",
+        trackComplaint: "Track my breakdown complaint",
+        mySolar: "Check rooftop solar capacity for my feeder",
       },
       mockAnswers: {
         highBill: "Your current billing cycle recorded 154 kWh compared to your 6-month average of 138 kWh. Common factors in domestic tariffs include tier escalations above 120 units, fuel adjustment surcharges, and heavy appliance usage (air conditioning/water heaters). You can review your day-by-day consumption chart in the dashboard.",
@@ -241,6 +286,15 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
         reportBreakdown: "To report a breakdown, click the 'Report Breakdown' button on the dashboard or provide your 10-digit account number (#0412345678) and issue description here. In emergencies like fallen lines or transformer sparks, contact our 24/7 hotline at 1987 immediately.",
         solarCapacity: "For rooftop solar net-metering applications, transformer clearance is required. In your area (Colombo 05 / F-04), available hosting capacity is currently 35 kVA out of 100 kVA rated capacity. You can submit an initial grid feasibility assessment through our Solar Services portal.",
         defaultFallback: "Thank you for reaching out to EDL Care Assistant. We have registered your request. For urgent electrical hazards or supply restoration, please call the 24/7 emergency dispatch at 1987 or visit your local EDL Area Engineer office.",
+        understandBill: "I can help you understand electricity billing, consumption units and applicable tariff structures. In Sri Lanka, domestic bills consist of (1) Block-based energy charges per kWh, (2) Fixed service charges, and (3) Applicable fuel adjustment levy. Would you like to explore a sample bill breakdown?",
+        tariffExpl: "Domestic tariffs operate on cumulative 30-day blocks: 0–30 units (lowest subsidized rate), 31–60 units, 61–90 units, 91–120 units, and >120 units. Staying below 60 units qualifies households for subsidized lifeline rates.",
+        safetyGuide: "Essential safety guidance: (1) Test your Earth Leakage Circuit Breaker (ELCB/Trip Switch) monthly, (2) Never touch wet electrical switches, (3) Keep 3 meters clear of overhead service lines, and (4) Call 1987 immediately if you spot a fallen wire or sparking transformer.",
+        generalOutage: "EDL schedules planned maintenance to conduct vegetation clearing, line insulation upgrades, and transformer maintenance. Notices are published 48 hours in advance in national newspapers and on our live Outage Map.",
+        guestBillCheck: "🔒 Login Required: You are currently browsing in Guest Mode. To protect personal financial data, bill balances are only accessible to authenticated customers. Please sign in or switch to Customer Mode to view Account #0412345678.",
+        myBill: "Your demo account (#0412345678 – Home) has an outstanding balance of Rs. 4,850.00 for October 2026. Payment due date is 25 Nov 2026. Would you like to proceed with an instant online payment?",
+        myConsumption: "In October 2026, your household consumed 142 kWh (Down 11.2% from September's 160 kWh). Your 6-month average is 154 kWh, keeping you within the standard domestic efficiency bracket.",
+        trackComplaint: "Complaint #REF-2026-9841 ('Service wire sparking near roof eaves') logged on 12 Nov 2026 is currently IN PROGRESS. Assigned Depot: Colombo South. Estimated on-site completion: Today by 4:00 PM.",
+        mySolar: "Your connected distribution transformer (TR-402, Nugegoda / Feeder F-04) has 42 kW of remaining rooftop solar absorption capacity. You can proceed with a Net-Metering or Net-Plus grid application.",
       },
     },
   },
@@ -336,17 +390,35 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     chatbot: {
       title: "ඊ.ඩී.එල් කෙයාර් සහයක",
       status: "සක්‍රියයි • AI සහය සූදානම්",
-      welcomeMsg: "ආයුබෝවන්! මම ඔබගේ EDL Care AI සහයකයා වෙමි. ඔබගේ විදුලි බිල්පත, විදුලි ඇනහිටීම්, දෝෂ වාර්තා කිරීම් සහ සූර්ය බල සම්බන්ධතා පිළිබඳ තොරතුරු ලබාදීමට මට හැකිය. අද මම ඔබට උදව් කරන්නේ කෙසේද?",
+      welcomeMsg: "ආයුබෝවන්! මම ඔබගේ EDL Care AI සහයකයා වෙමි. අද මම ඔබට උදව් කරන්නේ කෙසේද?",
+      guestWelcomeMsg: "ආයුබෝවන්! මම අමුත්තන්ගේ මාදිලියේ (Guest Mode) සිටින EDL Care සහයකයා වෙමි. පොදු විදුලි ගාස්තු, ආරක්ෂිත මාර්ගෝපදේශ සහ ඇනහිටීම් පිළිබඳ විස්තර ලබාදිය හැක. පෞද්ගලික බිල්පත් බැලීමට ප්‍රවිෂ්ට වන්න.",
+      customerWelcomeMsg: "ආයුබෝවන් දසුනි! මම ඔබගේ පාරිභෝගික මාදිලියේ (Customer Mode) EDL Care සහයකයා වෙමි. ගිණුම් අංක 0412345678 සම්බන්ධයි. ඔබගේ බිල්පත්, භාවිතය හෝ පැමිණිලි පිළිබඳව කුමක් දැනගැනීමට කැමතිද?",
       inputPlaceholder: "ඔබගේ ගැටලුව සිංහල, ඉංග්‍රීසි හෝ දෙමළ බසින් ලියන්න...",
       send: "යවන්න",
       typing: "EDL සහයක පිළිතුර සකස් කරමින් සිටී...",
-      disclaimer: "ආදර්ශන සහයක: මෙම පිළිතුරු නිරූපණය සඳහා සකසා ඇත.",
-      suggestedQuestionsTitle: "නිතර අසන ප්‍රශ්න",
+      disclaimer: "ආදර්ශන සහයක: Gemini & RAG තාක්ෂණය මගින් බලගැන්වෙන ආදර්ශන පිළිතුරු.",
+      suggestedQuestionsTitle: "යෝජිත ප්‍රශ්න",
+      guestModeLabel: "අමුත්තන්ගේ මාදිලිය (Guest)",
+      customerModeLabel: "පාරිභෝගික මාදිලිය (Customer)",
+      guestModeDesc: "පොදු තොරතුරු • ප්‍රවිෂ්ට වීම අවශ්‍ය නොවේ",
+      customerModeDesc: "තහවුරු කළ ගිණුම: #0412345678",
+      switchModeNotice: "Guest සහ Customer මාදිලි අතර මාරුවී අත්හදා බලන්න.",
+      viewFeatureMatrix: "හැකියා සංසන්දනය",
+      loginRequiredMsg: "🔒 ප්‍රවිෂ්ට වීම අවශ්‍යයි: අමුත්තන්ගේ මාදිලියේදී පෞද්ගලික බිල්පත් සහ ගිණුම් තොරතුරු ආරක්ෂා කර ඇත. ඔබගේ ගෙවිය යුතු ශේෂය සහ පැමිණිලි බැලීමට කරුණාකර ප්‍රවිෂ්ට වන්න.",
       quickReplies: {
         highBill: "මගේ විදුලි බිල වැඩි වී ඇත්තේ ඇයි?",
         outageArea: "මගේ ප්‍රදේශයේ විදුලිය ඇනහිටීමක් තිබේද?",
         reportBreakdown: "විදුලි බිඳවැටීමක් වාර්තා කරන්නේ කෙසේද?",
         solarCapacity: "සූර්ය ට්‍රාන්ස්ෆෝමර් ධාරිතාව පරීක්ෂා කරන්නේ කෙසේද?",
+        understandBill: "විදුලි බිල තේරුම් ගන්නේ කෙසේද?",
+        tariffExpl: "ගෘහස්ථ විදුලි ගාස්තු ක්‍රමය පැහැදිලි කරන්න",
+        safetyGuide: "අත්‍යවශ්‍ය විදුලි ආරක්ෂණ උපදෙස් මොනවාද?",
+        generalOutage: "සැලසුම් කළ විදුලි නඩත්තු සිදුවන්නේ කෙසේද?",
+        guestBillCheck: "මගේ ගෙවිය යුතු බිල කීයද? (Login පරීක්ෂාව)",
+        myBill: "මගේ ගෙවිය යුතු බිල්පත් ශේෂය කීයද?",
+        myConsumption: "ඔක්තෝබර් 2026 විදුලි භාවිතය පෙන්වන්න",
+        trackComplaint: "මගේ විදුලි දෝෂ පැමිණිල්ලේ තත්ත්වය",
+        mySolar: "මගේ ප්‍රදේශයේ සූර්ය බල ධාරිතාව පරීක්ෂා කරන්න",
       },
       mockAnswers: {
         highBill: "ඔබගේ ඔක්තෝබර් මාසයේ විදුලි භාවිතය ඒකක 154ක් වන අතර මාස 6ක සාමාන්‍යය ඒකක 138කි. ගෘහස්ථ කාණ්ඩයේ ඒකක 120 ඉක්මවීම හේතුවෙන් ඉහළ ගාස්තු පියවරකට ඇතුළත් වීම සහ අධික විදුලි උපකරණ (වායුසමීකරණ/ජල තාපක) භාවිතය මීට හේතු විය හැක.",
@@ -354,6 +426,15 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
         reportBreakdown: "විදුලි බිඳවැටීමක් වාර්තා කිරීමට පාලක පුවරුවේ ඇති 'දැන් වාර්තා කරන්න' බොත්තම ඔබන්න, නැතහොත් ඔබගේ ඉලක්කම් 10 ක ගිණුම් අංකය සහ ගැටලුව මෙහි සඳහන් කරන්න. හදිසි අනතුරකදී 1987 ක්ෂණික ඇමතුම් අංකය අමතන්න.",
         solarCapacity: "සූර්ය බල පද්ධති සම්බන්ධතා සඳහා ඔබගේ කලාපයේ (කොළඹ 05 / F-04) ට්‍රාන්ස්ෆෝමරයේ දැනට 35 kVA අතිරික්ත ධාරිතාවක් පවතී. අපගේ සූර්ය බල සේවා අංශය හරහා අයදුම්පතක් ඉදිරිපත් කළ හැක.",
         defaultFallback: "EDL Care සහයක හා සම්බන්ධ වීම ගැන ස්තූතියි. ඔබගේ විමසුම ලියාපදිංචි කර ඇත. හදිසි විදුලි උපද්‍රව සඳහා කරුණාකර 1987 අමතන්න.",
+        understandBill: "විදුලි බිල්පත් ගණනය කිරීම, ඒකක භාවිතය සහ අදාළ ගාස්තු ක්‍රම තේරුම් ගැනීමට මට උදව් කළ හැක. ශ්‍රී ලංකාවේ ගෘහස්ථ බිල්පත (1) ඒකක අනුව බලශක්ති ගාස්තුව, (2) ස්ථාවර සේවා ගාස්තුව සහ (3) ඉන්ධන ගැලපුම් ගාස්තුවෙන් සමන්විත වේ. ආදර්ශන බිල්පතක් පරීක්ෂා කිරීමට කැමතිද?",
+        tariffExpl: "ගෘහස්ථ විදුලි ගාස්තු දින 30ක ඒකක කාණ්ඩ මත පදනම් වේ: ඒකක 0–30 (අඩුම සහනාධාර ගාස්තුව), 31–60, 61–90, 91–120, සහ 120ට වැඩි. මාසික භාවිතය ඒකක 60ට අඩුවෙන් තබා ගැනීමෙන් උපරිම සහනාධාර හිමිවේ.",
+        safetyGuide: "අත්‍යවශ්‍ය ආරක්ෂක උපදෙස්: (1) මසකට වරක් ඔබගේ ට්‍රිප් ස්විචය (ELCB) පරීක්ෂා කරන්න, (2) තෙතමනය සහිත දෑතින් විදුලි ස්විච අල්ලන්න එපා, (3) ප්‍රධාන විදුලි රැහැන්වලට මීටර් 3ක පරතරයක් තබාගන්න, (4) කැඩී වැටුණු වයර් දුටු වහාම 1987 අමතන්න.",
+        generalOutage: "ගස් කප්පාදු කිරීම, රැහැන් නඩත්තුව සහ ට්‍රාන්ස්ෆෝමර් පරීක්ෂාව සඳහා සැලසුම් කළ නඩත්තු සිදු කෙරේ. මේ පිළිබඳව පැය 48කට පෙර දැනුම්දීම් නිකුත් කෙරේ.",
+        guestBillCheck: "🔒 ප්‍රවිෂ්ට වීම අවශ්‍යයි: ඔබ දැනට අමුත්තන්ගේ මාදිලියේ (Guest Mode) සිටී. පෞද්ගලික මූල්‍ය දත්ත ආරක්ෂා කිරීම සඳහා බිල්පත් ශේෂයන් දැකගත හැක්කේ ප්‍රවිෂ්ට වූ පාරිභෝගිකයින්ට පමණි. කරුණාකර ප්‍රවිෂ්ට වන්න.",
+        myBill: "ඔබගේ ආදර්ශන ගිණුමේ (#0412345678 – නිවස) ඔක්තෝබර් 2026 සඳහා ගෙවිය යුතු ශේෂය රු. 4,850.00 කි. ගෙවිය යුතු අවසන් දිනය 2026 නොවැම්බර් 25 වේ. දැන්ම ඔන්ලයින් ගෙවීමට කැමතිද?",
+        myConsumption: "2026 ඔක්තෝබර් මාසයේදී ඔබගේ පරිභෝජනය ඒකක 142කි (සැප්තැම්බර් මාසයට වඩා 11.2%ක අඩුවීමක්). මාස 6ක සාමාන්‍යය ඒකක 154කි.",
+        trackComplaint: "2026 නොවැම්බර් 12 දින යොමුකළ පැමිණිලි අංක #REF-2026-9841 ('වහල අසල සේවා රැහැනේ ගිනි පුපුරු') දැනට විසඳමින් පවතී (IN PROGRESS). කොළඹ දකුණ කාර්මික අංශය පවරා ඇත.",
+        mySolar: "ඔබ සම්බන්ධ වී ඇති බෙදාහැරීමේ ට්‍රාන්ස්ෆෝමරයේ (TR-402, නුගේගොඩ) වහල මත සූර්ය පද්ධති සඳහා 42 kW අතිරික්ත ධාරිතාවක් පවතී.",
       },
     },
   },
@@ -449,17 +530,35 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     chatbot: {
       title: "ஈ.டி.எல் கேர் உதவியாளர்",
       status: "இணைப்பில் உள்ளது • AI தயார்",
-      welcomeMsg: "வணக்கம்! நான் உங்கள் EDL Care AI உதவியாளர். உங்கள் மின் கட்டணம், மின்தடைகள், புகார் செய்தல் மற்றும் சூரிய சக்தி இணைப்புகள் குறித்த தகவல்களை வழங்க முடியும். இன்று நான் உங்களுக்கு எவ்வாறு உதவலாம்?",
+      welcomeMsg: "வணக்கம்! நான் உங்கள் EDL Care AI உதவியாளர். இன்று நான் உங்களுக்கு எவ்வாறு உதவலாம்?",
+      guestWelcomeMsg: "வணக்கம்! நான் விருந்தினர் பயன்முறையில் (Guest Mode) உள்ள EDL Care உதவியாளர். பொதுவான மின் கட்டண முறைகள், பாதுகாப்பு வழிமுறைகள் மற்றும் மின்தடை விபரங்களை வழங்க முடியும். தனிப்பயனாக்கப்பட்ட கட்டண விவரங்களைப் பெற உள்நுழையவும்.",
+      customerWelcomeMsg: "வணக்கம் தசுனி! நான் உங்கள் வாடிக்கையாளர் பயன்முறையில் (Customer Mode) உள்ள EDL Care உதவியாளர். கணக்கு #0412345678 இணைக்கப்பட்டுள்ளது. உங்கள் கட்டணங்கள் அல்லது புகார்கள் குறித்து எவ்வாறு உதவலாம்?",
       inputPlaceholder: "உங்கள் கேள்வியை தமிழ், சிங்களம் அல்லது ஆங்கிலத்தில் தட்டச்சு செய்யவும்...",
       send: "அனுப்பு",
       typing: "EDL உதவியாளர் பதிலைத் தயாரிக்கிறார்...",
-      disclaimer: "டெமோ உதவியாளர்: இந்த பதில்கள் செயல்விளக்கத்திற்காக உருவாக்கப்பட்டவை.",
-      suggestedQuestionsTitle: "அடிக்கடி கேட்கப்படும் கேள்விகள்",
+      disclaimer: "டெமோ உதவியாளர்: Gemini & RAG தொழில்நுட்பத்தால் இயக்கப்படும் மாதிரி பதில்கள்.",
+      suggestedQuestionsTitle: "பரிந்துரைக்கப்பட்ட கேள்விகள்",
+      guestModeLabel: "விருந்தினர் பயன்முறை (Guest)",
+      customerModeLabel: "வாடிக்கையாளர் பயன்முறை (Customer)",
+      guestModeDesc: "பொதுத் தகவல் • உள்நுழைவு தேவையில்லை",
+      customerModeDesc: "சரிபார்க்கப்பட்ட கணக்கு: #0412345678",
+      switchModeNotice: "Guest மற்றும் Customer பயன்முறைகளை மாற்றி சோதிக்கவும்.",
+      viewFeatureMatrix: "அம்சங்களை ஒப்பிடுக",
+      loginRequiredMsg: "🔒 உள்நுழைவு தேவை: விருந்தினர் பயன்முறையில் தனிப்பட்ட மின்கட்டண விபரங்கள் பாதுகாக்கப்படுகின்றன. நிலுவைத் தொகை மற்றும் புகார்களைப் பார்க்க தயவுசெய்து உள்நுழையவும்.",
       quickReplies: {
         highBill: "எனது மின் கட்டணம் அதிகமாக இருப்பது ஏன்?",
         outageArea: "எனது பகுதியில் மின்தடை உள்ளதா?",
         reportBreakdown: "மின்தடையை எவ்வாறு புகாரளிப்பது?",
         solarCapacity: "சூரிய மின்மாற்றி திறனை எவ்வாறு சரிபார்ப்பது?",
+        understandBill: "மின் கட்டணத்தை எவ்வாறு புரிந்துகொள்வது?",
+        tariffExpl: "வீட்டு மின் கட்டண முறையை விளக்குக",
+        safetyGuide: "அத்தியாவசிய மின் பாதுகாப்பு குறிப்புகள் யாவை?",
+        generalOutage: "திட்டமிடப்பட்ட மின்தடை பராமரிப்பு எவ்வாறு செயல்படுகிறது?",
+        guestBillCheck: "எனது நிலுவைக் கட்டணம் எவ்வளவு? (Login சோதனை)",
+        myBill: "எனது நிலுவைக் கட்டணம் எவ்வளவு?",
+        myConsumption: "அக்டோபர் 2026 மின் நுகர்வைக் காட்டு",
+        trackComplaint: "எனது மின்தடை புகாரின் நிலை",
+        mySolar: "எனது பகுதிக்கான சூரிய மின்மாற்றி திறன்",
       },
       mockAnswers: {
         highBill: "உங்கள் அக்டோபர் மாத மின் நுகர்வு 154 அலகுகளாகும், உங்கள் 6 மாத சராசரி 138 அலகுகள் ஆகும். 120 அலகுகளுக்கு மேல் பயன்பாடு அதிகரிக்கும் போது கட்டண அடுக்கு மாறுவது மற்றும் அதிக மின் சாதனங்களின் பயன்பாடு இதற்கு காரணமாக இருக்கலாம்.",
@@ -467,6 +566,15 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
         reportBreakdown: "மின்தடையைப் புகாரளிக்க டாஷ்போர்டில் உள்ள 'இப்போது புகாரளிக்கவும்' பொத்தானைக் கிளிக் செய்யவும் அல்லது உங்கள் 10 இலக்க கணக்கு எண்ணையும் கோளாறையும் இங்கு பதிவிடவும். அவசர ஆபத்துகளுக்கு 1987 அவசர தொலைபேசியை உடனடியாக அழைக்கவும்.",
         solarCapacity: "உங்கள் பகுதியில் (கொழும்பு 05 / F-04) கூரை சூரிய சக்தி அமைப்பிற்கு தற்போது 35 kVA கூடுதல் மின்மாற்றி திறன் உள்ளது. எங்கள் சூரிய சக்தி சேவை போர்டல் மூலம் விண்ணப்பிக்கலாம்.",
         defaultFallback: "EDL Care உதவியாளரைத் தொடர்பு கொண்டதற்கு நன்றி. அவசர மின் ஆபத்துகளுக்கு 1987 என்ற அவசர தொலைபேசி எண்ணை அழைக்கவும்.",
+        understandBill: "மின் கட்டணக் கணக்கீடு, நுகர்வு அலகுகள் மற்றும் பொருந்தக்கூடிய கட்டண முறைகளைப் புரிந்துகொள்ள உதவ முடியும். இலங்கையில் உள்நாட்டு கட்டணங்கள் (1) அலகுக்கான மின் கட்டணம், (2) நிலையான சேவைக் கட்டணம் மற்றும் (3) எரிபொருள் சரிசெய்தல் கட்டணம் ஆகியவற்றைக் கொண்டுள்ளது. மாதிரி கட்டணத்தைப் பார்க்க விரும்புகிறீர்களா?",
+        tariffExpl: "வீட்டு மின் கட்டணங்கள் 30 நாள் அடுக்கு முறையைக் கொண்டுள்ளன: 0–30 அலகுகள் (குறைந்த மானியக் கட்டணம்), 31–60, 61–90, 91–120 மற்றும் 120 அலகுகளுக்கு மேல். 60 அலகுகளுக்குக் குறைவாக வைத்திருப்பதன் மூலம் மானியக் கட்டணங்களைப் பெறலாம்.",
+        safetyGuide: "அத்தியாவசிய பாதுகாப்பு வழிகாட்டல்: (1) மாதந்தோறும் டிரிப் சுவிட்சை (ELCB) சோதிக்கவும், (2) ஈரமான கைகளால் சுவிட்சைத் தொடாதீர்கள், (3) பிரதான மின்கம்பிகளுக்கு 3 மீட்டர் இடைவெளி விடவும், (4) உடைந்த கம்பிகளைக் கண்டால் உடனடியாக 1987 ஐ அழைக்கவும்.",
+        generalOutage: "மரக்கிளைகளை வெட்டுதல், மின் இணைப்புகளைப் புதுப்பித்தல் மற்றும் மின்மாற்றி பராமரிப்பிற்காக திட்டமிடப்பட்ட பராமரிப்பு மேற்கொள்ளப்படுகிறது. 48 மணி நேரத்திற்கு முன்பே அறிவிப்புகள் வெளியிடப்படும்.",
+        guestBillCheck: "🔒 உள்நுழைவு தேவை: நீங்கள் தற்போது விருந்தினர் பயன்முறையில் (Guest Mode) உள்ளீர்கள். தனிப்பட்ட நிதித் தரவைப் பாதுகாக்க, பதிவுசெய்த வாடிக்கையாளர்களுக்கு மட்டுமே கட்டண விவரங்கள் காண்பிக்கப்படும். கணக்கு #0412345678 ஐப் பார்க்க உள்நுழையவும்.",
+        myBill: "உங்கள் டெமோ கணக்கில் (#0412345678 – வீடு) அக்டோபர் 2026க்கான நிலுவைத் தொகை ரூ. 4,850.00 ஆகும். செலுத்த வேண்டிய இறுதி தேதி 25 நவம்பர் 2026. ஆன்லைனில் உடனடியாக செலுத்த விரும்புகிறீர்களா?",
+        myConsumption: "அக்டோபர் 2026 இல், உங்கள் மின் நுகர்வு 142 kWh ஆகும் (செப்டம்பர் மாதத்தை விட 11.2% குறைவு). உங்கள் 6 மாத சராசரி 154 kWh ஆகும்.",
+        trackComplaint: "12 நவம்பர் 2026 அன்று பதிவு செய்யப்பட்ட புகார் #REF-2026-9841 ('கூரை அருகில் உள்ள சர்வீஸ் வயரில் தீப்பொறி') தற்போது செயல்பாட்டில் உள்ளது (IN PROGRESS). கொழும்பு தெற்கு பிரிவு ஒதுக்கப்பட்டுள்ளது.",
+        mySolar: "உங்கள் விநியோக மின்மாற்றியில் (TR-402, நுகேகொட / பீடர் F-04) கூரை சூரிய மின் உற்பத்திக்காக 42 kW மீதமுள்ள திறன் உள்ளது.",
       },
     },
   },

@@ -52,16 +52,28 @@ The UI reflects the authoritative utility identity of EDL:
 - **Quick Services Grid**:
   - 4 fast-track self-service cards: *View Electricity Bill*, *Check Outage*, *Report Breakdown*, and *Solar Services*.
 
-### C. EDL Care Assistant (AI Chatbot Drawer)
-- Floating assistant launcher button at the bottom-right with pulsating status indicator.
-- Polished slide-over chat panel featuring maroon gradient header and live status badge.
-- In-drawer language toggle for rapid multilingual queries.
-- Pre-populated quick-reply chips:
-  1. *Why is my electricity bill high?*
-  2. *Is there a power outage in my area?*
-  3. *How can I report a breakdown?*
-  4. *How can I check solar transformer capacity?*
-- Realistic typing indicators and contextual mock responses clearly labeled for demonstration.
+### C. EDL Care Assistant (Option C – Guest + Login-Based AI Chatbot)
+- **Official Access Architecture (Option C)**:
+  - **Guest Mode (No Login)**: Unrestricted public access to general electricity FAQs, tiered tariff explanations, electrical safety advice, and general outage guidance.
+  - **Customer Mode (Authenticated)**: Personalized account assistance with live access to fictional customer bills, 6-month consumption history, active breakdown complaints, and dedicated feeder solar capacity.
+  - **Shared AI Backend**: Google Gemini + RAG Knowledge Base with strict scope and permission boundaries separating public requests from authenticated accounts.
+- **In-App Feature Comparison Matrix**:
+  | Feature | Guest | Logged In |
+  | :--- | :---: | :---: |
+  | General electricity FAQs | ✅ | ✅ |
+  | Tariff explanations | ✅ | ✅ |
+  | Electrical safety guidance | ✅ | ✅ |
+  | General outage guidance | ✅ | ✅ |
+  | Personal bill details | 🔒 Login required | ✅ |
+  | Personal consumption history | 🔒 Login required | ✅ |
+  | Personal complaint tracking | 🔒 Login required | ✅ |
+  | Personalized account assistance | 🔒 Login required | ✅ |
+- **Interactive UI Capabilities**:
+  - One-click **Guest ⇄ Customer** mode switcher pill in chat header for instant demonstration.
+  - "Compare Modes" feature matrix modal right inside the chat window.
+  - Mode-adaptive quick-reply chips and greeting messages.
+  - Contextual action buttons in bot replies (e.g., *[Pay Rs. 4,850.00]*, *[View Bill Details]*, *[Customer Sign In]*).
+  - Trilingual conversation engine in **English**, **Sinhala (සිංහල)**, and **Tamil (தமிழ்)**.
 
 ### D. Outage Map & Grid Disruption Monitor
 - Dedicated route `/outages` prepared for integration with **Leaflet** and **OpenStreetMap**.

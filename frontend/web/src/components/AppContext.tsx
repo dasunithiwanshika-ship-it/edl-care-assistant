@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Language, Theme, CustomerAccount } from "@/types";
+import { Language, Theme, CustomerAccount, ChatMode } from "@/types";
 import { TRANSLATIONS, TranslationStrings } from "@/data/translations";
 import { MOCK_CUSTOMER_ACCOUNT } from "@/data/mockData";
 
@@ -15,7 +15,9 @@ interface AppContextType {
   payBill: (amount: number) => void;
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
-  openChatWithQuery: (query: string) => void;
+  chatMode: ChatMode;
+  setChatMode: (mode: ChatMode) => void;
+  openChatWithQuery: (query: string, mode?: ChatMode) => void;
   initialChatQuery: string | null;
   setInitialChatQuery: (q: string | null) => void;
   reportModalOpen: boolean;
@@ -46,6 +48,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
   const [account, setAccount] = useState<CustomerAccount>(MOCK_CUSTOMER_ACCOUNT);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMode, setChatMode] = useState<ChatMode>("customer");
   const [initialChatQuery, setInitialChatQuery] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [billModalOpen, setBillModalOpen] = useState(false);
@@ -99,7 +102,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
-  const openChatWithQuery = (query: string) => {
+  const openChatWithQuery = (query: string, mode?: ChatMode) => {
+    if (mode) setChatMode(mode);
     setInitialChatQuery(query);
     setIsChatOpen(true);
   };
@@ -118,6 +122,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         payBill,
         isChatOpen,
         setIsChatOpen,
+        chatMode,
+        setChatMode,
         openChatWithQuery,
         initialChatQuery,
         setInitialChatQuery,
