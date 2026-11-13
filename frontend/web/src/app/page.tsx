@@ -11,14 +11,8 @@ import {
   Plug, 
   ArrowRight, 
   Plus, 
-  CreditCard, 
-  Receipt, 
-  Zap, 
   CheckCircle2, 
   XCircle,
-  Clock, 
-  ChevronLeft,
-  ChevronRight,
   QrCode
 } from "lucide-react";
 import { useApp } from "@/components/AppContext";
@@ -35,7 +29,6 @@ export default function DashboardPage() {
   } = useApp();
 
   const [currentTime, setCurrentTime] = useState("01:05 PM");
-  const [activeSlide, setActiveSlide] = useState<0 | 1>(0);
 
   useEffect(() => {
     const update = () => {
@@ -123,142 +116,70 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Clock & Sun Slider Widget matching Screenshot 1 & 2 */}
-        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-3.5 bg-slate-50/60 dark:bg-slate-900/60 flex flex-col items-center justify-center min-w-[210px] text-center shadow-xs">
+        {/* Clean Clock Widget (Slider bar removed) */}
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 px-6 py-4 bg-slate-50/60 dark:bg-slate-900/60 flex flex-col items-center justify-center min-w-[190px] text-center shadow-xs">
           <span 
-            className="text-xl sm:text-2xl font-black text-[#6c002c] dark:text-[#f87171] tracking-tight"
+            className="text-2xl sm:text-3xl font-black text-[#6c002c] dark:text-[#f87171] tracking-tight"
             style={{ fontFamily: "'Manrope', sans-serif" }}
           >
             {currentTime}
           </span>
-          <div className="w-full flex items-center justify-between gap-2 mt-1 text-[10px] text-slate-400 font-mono">
-            <span>12 AM</span>
-            <div className="flex-1 flex items-center justify-center relative">
-              <div className="w-full h-0.5 bg-slate-200 dark:bg-slate-700" />
-              <Sun className="w-4 h-4 text-amber-500 absolute" />
-            </div>
-            <span>12 PM</span>
-            <div className="flex-1 flex items-center justify-center relative">
-              <div className="w-full h-0.5 bg-slate-200 dark:bg-slate-700" />
-            </div>
-            <span>12 AM</span>
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <Sun className="w-3.5 h-3.5 text-amber-500" />
+            <span className="font-medium">Sri Lanka Standard Time</span>
           </div>
         </div>
       </div>
 
-      {/* 2. Interactive Hero Banner (Carousel supporting both Screenshot 1 & Screenshot 2) */}
-      <div className="relative rounded-3xl overflow-hidden shadow-card min-h-[280px] sm:min-h-[320px]">
-        {activeSlide === 0 ? (
-          /* SLIDE 0: "Check Rooftop Solar Capacity Availability" (Exact match to Screenshot 2) */
-          <div 
-            className="w-full h-full p-6 sm:p-10 flex flex-col justify-between relative bg-cover bg-center overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, rgba(224, 242, 254, 0.95) 0%, rgba(240, 253, 244, 0.9) 100%)",
-            }}
-          >
-            {/* Top Badge & Header */}
-            <div className="relative z-10 text-center sm:text-left space-y-1">
-              <h2 className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
-                <span className="text-[#0f766e] block">Check Rooftop Solar</span>
-                <span className="text-[#6c002c] block">Capacity Availability</span>
-              </h2>
-              <p className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider pt-1">
-                Before You Apply
-              </p>
-            </div>
+      {/* 2. Rooftop Solar Banner (Clean static banner matching Screenshot 2 directly, no slider bars/arrows) */}
+      <div 
+        className="rounded-3xl overflow-hidden shadow-card p-6 sm:p-10 flex flex-col justify-between relative bg-cover bg-center"
+        style={{
+          background: "linear-gradient(135deg, rgba(224, 242, 254, 0.95) 0%, rgba(240, 253, 244, 0.9) 100%)",
+        }}
+      >
+        {/* Top Header */}
+        <div className="relative z-10 text-center sm:text-left space-y-1">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+            <span className="text-[#0f766e] block">Check Rooftop Solar</span>
+            <span className="text-[#6c002c] block">Capacity Availability</span>
+          </h2>
+          <p className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider pt-1">
+            Before You Apply
+          </p>
+        </div>
 
-            {/* Middle Floating Frosted Glass Card (matching Screenshot 2) */}
-            <div className="relative z-10 mt-3 p-4 sm:p-5 rounded-2xl bg-white/90 dark:bg-[#161B22]/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-700 shadow-md max-w-2xl space-y-3">
-              <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
-                Check whether your nearest transformer has available capacity for a new rooftop solar connection.
-              </p>
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-800">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Capacity Available</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 text-xs font-bold border border-orange-200 dark:border-orange-800">
-                  <XCircle className="w-3.5 h-3.5 text-orange-600" />
-                  <span>Capacity Limit Reached</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Bottom Row with QR trigger & action button */}
-            <div className="relative z-10 flex items-center justify-between pt-4">
-              <button
-                onClick={() => setSolarModalOpen(true)}
-                className="px-6 py-2.5 rounded-xl bg-[#6c002c] hover:bg-[#550022] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
-              >
-                <Sun className="w-4 h-4 text-[#F8BB15]" />
-                <span>Check Transformer Capacity</span>
-              </button>
-
-              <div className="hidden sm:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs text-xs font-semibold text-slate-700 dark:text-slate-300">
-                <QrCode className="w-4 h-4 text-slate-800 dark:text-slate-200" />
-                <span className="text-[11px]">Instant Grid Scan</span>
-              </div>
-            </div>
+        {/* Middle Floating Frosted Glass Card (matching Screenshot 2) */}
+        <div className="relative z-10 my-4 p-4 sm:p-5 rounded-2xl bg-white/95 dark:bg-[#161B22]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-700 shadow-md max-w-2xl space-y-3">
+          <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
+            Check whether your nearest transformer has available capacity for a new rooftop solar connection.
+          </p>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-800">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Capacity Available</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 text-xs font-bold border border-orange-200 dark:border-orange-800">
+              <XCircle className="w-3.5 h-3.5 text-orange-600" />
+              <span>Capacity Limit Reached</span>
+            </span>
           </div>
-        ) : (
-          /* SLIDE 1: "Enrich life through power" (Screenshot 1) */
-          <div 
-            className="w-full h-full p-8 sm:p-12 text-white flex flex-col justify-end relative"
-            style={{
-              background: "linear-gradient(135deg, rgba(16, 36, 24, 0.9) 0%, rgba(13, 24, 18, 0.85) 100%), radial-gradient(circle at 80% 50%, rgba(34, 197, 94, 0.3) 0%, transparent 60%)",
-            }}
+        </div>
+
+        {/* Bottom Row with action button */}
+        <div className="relative z-10 flex items-center justify-between pt-2">
+          <button
+            onClick={() => setSolarModalOpen(true)}
+            className="px-6 py-2.5 rounded-xl bg-[#6c002c] hover:bg-[#550022] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
           >
-            <div className="relative z-10 max-w-2xl space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500 text-white font-bold text-[10px] uppercase tracking-wider">
-                  EDLCare
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur-xs text-emerald-400 font-bold text-[10px] flex items-center gap-1.5 border border-white/10">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live
-                </span>
-              </div>
+            <Sun className="w-4 h-4 text-[#F8BB15]" />
+            <span>Check Transformer Capacity</span>
+          </button>
 
-              <h2 
-                className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold tracking-tight text-white leading-tight"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-              >
-                Enrich life through power
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed">
-                EDLCare — generating, transmitting, and distributing electricity with reliability you can count on.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 pt-3">
-                <button className="px-5 py-2 rounded-full bg-black/60 hover:bg-black/80 text-white font-bold text-xs border border-white/20 transition-all">
-                  EDLCare
-                </button>
-                <button className="px-4 py-2 rounded-full text-white font-bold text-xs uppercase tracking-wider hover:underline transition-all">
-                  EDLCARE ENERGY SOLUTIONS
-                </button>
-              </div>
-            </div>
+          <div className="hidden sm:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <QrCode className="w-4 h-4 text-slate-800 dark:text-slate-200" />
+            <span className="text-[11px]">Instant Grid Scan</span>
           </div>
-        )}
-
-        {/* Carousel Arrow Controls */}
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/30 backdrop-blur-xs p-1 rounded-full text-white">
-          <button
-            onClick={() => setActiveSlide(activeSlide === 0 ? 1 : 0)}
-            className="p-1 hover:bg-white/20 rounded-full transition-colors"
-            title="Previous banner"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-[10px] font-mono font-bold px-1">{activeSlide + 1}/2</span>
-          <button
-            onClick={() => setActiveSlide(activeSlide === 0 ? 1 : 0)}
-            className="p-1 hover:bg-white/20 rounded-full transition-colors"
-            title="Next banner"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
       </div>
 

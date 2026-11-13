@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 
@@ -8,6 +9,12 @@ export const ClientLayoutShell: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  // If on login page, render full screen without dashboard shell
+  if (pathname === "/login") {
+    return <main className="min-h-screen">{children}</main>;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc] dark:bg-[#0c0f14]">
