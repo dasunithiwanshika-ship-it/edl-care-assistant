@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppProvider } from "@/components/AppContext";
-import { Header } from "@/components/Header";
-import { Sidebar } from "@/components/Sidebar";
-import { ChatbotDrawer } from "@/features/chatbot/ChatbotDrawer";
+import { ClientLayoutShell } from "@/components/ClientLayoutShell";
 import { PayNowModal } from "@/components/modals/PayNowModal";
 import { BillDetailsModal } from "@/components/modals/BillDetailsModal";
 import { ReportBreakdownModal } from "@/components/modals/ReportBreakdownModal";
-import { ClientLayoutShell } from "@/components/ClientLayoutShell";
+import { BillCalculatorModalWrapper } from "@/components/modals/BillCalculatorModalWrapper";
+import { ScheduleModalWrapper } from "@/components/modals/ScheduleModalWrapper";
+import { SolarCapacityModalWrapper } from "@/components/modals/SolarCapacityModalWrapper";
+import { EBillModalWrapper } from "@/components/modals/EBillModalWrapper";
+import { ChatbotDrawer } from "@/features/chatbot/ChatbotDrawer";
 
 export const metadata: Metadata = {
-  title: "EDL Care Assistant – AI-Powered Customer Support System",
-  description: "Independent demonstration prototype for Electricity Distribution Lanka (EDL), Sri Lanka.",
+  title: "EDLCare Web Portal – Electricity Distribution Lanka",
+  description: "Official inspired EDLCare Customer Self-Service Portal & AI Assistant prototype.",
 };
 
 export default function RootLayout({
@@ -21,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen antialiased flex flex-col bg-surface-bg dark:bg-[#0c0f14] text-surface-textPrimary dark:text-[#e6edf3]">
+      <body className="min-h-screen antialiased flex flex-col bg-[#f8fafc] dark:bg-[#0c0f14] text-slate-900 dark:text-[#e2e8f0]">
         <AppProvider>
           <ClientLayoutShell>
             {children}
@@ -29,6 +31,10 @@ export default function RootLayout({
           <PayNowModal />
           <BillDetailsModal />
           <ReportBreakdownModal />
+          <BillCalculatorModalWrapper />
+          <ScheduleModalWrapper />
+          <SolarCapacityModalWrapper />
+          <EBillModalWrapper />
           <ChatbotDrawer />
         </AppProvider>
       </body>

@@ -24,6 +24,18 @@ interface AppContextType {
   setBillModalOpen: (open: boolean) => void;
   paymentModalOpen: boolean;
   setPaymentModalOpen: (open: boolean) => void;
+  billCalcModalOpen: boolean;
+  setBillCalcModalOpen: (open: boolean) => void;
+  scheduleModalOpen: boolean;
+  setScheduleModalOpen: (open: boolean) => void;
+  solarModalOpen: boolean;
+  setSolarModalOpen: (open: boolean) => void;
+  eBillModalOpen: boolean;
+  setEBillModalOpen: (open: boolean) => void;
+  isLoggedIn: boolean;
+  setIsLoggedIn: (logged: boolean) => void;
+  activeView: "portal" | "dashboard";
+  setActiveView: (view: "portal" | "dashboard") => void;
   notificationCount: number;
 }
 
@@ -38,10 +50,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [billModalOpen, setBillModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [billCalcModalOpen, setBillCalcModalOpen] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [solarModalOpen, setSolarModalOpen] = useState(false);
+  const [eBillModalOpen, setEBillModalOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [activeView, setActiveView] = useState<"portal" | "dashboard">("portal");
   const [notificationCount, setNotificationCount] = useState(2);
 
   useEffect(() => {
-    // Check saved theme or system preference
     const savedTheme = localStorage.getItem("edl_theme") as Theme | null;
     if (savedTheme) {
       setTheme(savedTheme);
@@ -110,6 +127,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setBillModalOpen,
         paymentModalOpen,
         setPaymentModalOpen,
+        billCalcModalOpen,
+        setBillCalcModalOpen,
+        scheduleModalOpen,
+        setScheduleModalOpen,
+        solarModalOpen,
+        setSolarModalOpen,
+        eBillModalOpen,
+        setEBillModalOpen,
+        isLoggedIn,
+        setIsLoggedIn,
+        activeView,
+        setActiveView,
         notificationCount,
       }}
     >
