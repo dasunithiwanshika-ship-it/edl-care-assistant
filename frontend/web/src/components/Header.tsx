@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   Search, 
   Maximize2, 
@@ -14,9 +14,9 @@ import {
   Menu, 
   User, 
   ChevronRight,
-  AlertTriangle,
-  CheckCircle,
-  ExternalLink
+  LogOut,
+  Sparkles,
+  Bot
 } from "lucide-react";
 import { useApp } from "./AppContext";
 import { Language } from "@/types";
@@ -27,6 +27,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const { 
     language, 
     setLanguage, 
@@ -38,6 +39,19 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -49,7 +63,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     }
   };
 
-  // Compute dynamic breadcrumbs from pathname
   const getBreadcrumbs = () => {
     if (pathname === "/home/bill-calculator") {
       return [
@@ -124,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
           {/* Right Tools matching official UI */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Search Box */}
+            {/* Search Box with ⌘K */}
             <div className="hidden md:flex items-center relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
@@ -157,52 +170,18 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               )}
             </button>
 
-            {/* Theme Toggle */}
+            {/* Theme Toggle Icon in Header */}
             <button
               onClick={toggleTheme}
               className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Toggle Theme"
             >
               {theme === "light" ? (
-                <Moon className="w-4 h-4" />
+                <Moon className="w-4 h-4 text-indigo-500" />
               ) : (
                 <Sun className="w-4 h-4 text-amber-400" />
               )}
             </button>
-
-            {/* Language Selector Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowLangMenu(!showLangMenu);
-                  setShowNotifications(false);
-                }}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-              >
-                <Globe className="w-3.5 h-3.5 text-[#6c002c] dark:text-[#f87171]" />
-                <span className="uppercase">{language}</span>
-              </button>
-
-              {showLangMenu && (
-                <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-[#1e2530] rounded-xl shadow-dropdown border border-slate-200 dark:border-slate-700 py-1.5 z-50">
-                  {languages.map((l) => (
-                    <button
-                      key={l.code}
-                      onClick={() => {
-                        setLanguage(l.code);
-                        setShowLangMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-xs flex justify-between items-center hover:bg-red-50 dark:hover:bg-red-950/40 ${
-                        language === l.code ? "font-bold text-[#6c002c] dark:text-[#f87171]" : "text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      <span>{l.native}</span>
-                      <span className="text-[10px] text-slate-400 uppercase">{l.code}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* Notifications Bell */}
             <div className="relative">
@@ -210,6 +189,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 onClick={() => {
                   setShowNotifications(!showNotifications);
                   setShowLangMenu(false);
+                  setShowProfileMenu(false);
                 }}
                 className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-colors"
                 title="Notifications"
@@ -240,17 +220,107 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               )}
             </div>
 
-            {/* User Avatar & View Profile (matching Screenshot 1) */}
-            <div className="flex items-center gap-2 pl-1">
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 flex items-center justify-center">
-                {/* Businessman / User Avatar representation */}
-                <div className="w-full h-full bg-gradient-to-tr from-sky-400 to-indigo-500 text-white flex items-center justify-center font-bold text-xs">
-                  D
+            {/* User Profile Avatar & Exact Dropdown Menu (Screenshot 3) */}
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                onClick={() => {
+                  setShowProfileMenu(!showProfileMenu);
+                  setShowNotifications(false);
+                  setShowLangMenu(false);
+                }}
+                className="flex items-center gap-2 pl-1 cursor-pointer focus:outline-none"
+              >
+                {/* Businessman User Avatar with green active dot */}
+                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-sky-100 dark:bg-sky-950 flex items-center justify-center">
+                  <svg className="w-full h-full" viewBox="0 0 36 36" fill="none">
+                    <circle cx="18" cy="18" r="18" fill="#E0F2FE" />
+                    <circle cx="18" cy="14" r="7" fill="#FCD34D" />
+                    <path d="M12 11c0-4 3-7 6-7s6 3 6 7c0 1-.5 2-1 2.5-1-1.5-3-2.5-5-2.5s-4 1-5 2.5c-.5-.5-1-1.5-1-2.5z" fill="#1E293B" />
+                    <path d="M7 34c0-6 5-11 11-11s11 5 11 11H7z" fill="#1E293B" />
+                    <path d="M15 23l3 8 3-8h-6z" fill="#EF4444" />
+                    <path d="M18 23l-2 5h4l-2-5z" fill="#FFFFFF" />
+                  </svg>
+                  {/* Green status dot */}
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#13171d]" />
                 </div>
-              </div>
-              <span className="hidden sm:inline text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 cursor-pointer">
-                View profile
-              </span>
+                <span className="hidden sm:inline text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+                  View profile
+                </span>
+              </button>
+
+              {/* Profile Dropdown matching Screenshot 3 identically */}
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#1a212b] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50 animate-slideUp">
+                  {/* User Profile Header */}
+                  <div className="p-4 flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-sky-100 flex items-center justify-center shrink-0">
+                      <svg className="w-full h-full" viewBox="0 0 36 36" fill="none">
+                        <circle cx="18" cy="18" r="18" fill="#E0F2FE" />
+                        <circle cx="18" cy="14" r="7" fill="#FCD34D" />
+                        <path d="M12 11c0-4 3-7 6-7s6 3 6 7c0 1-.5 2-1 2.5-1-1.5-3-2.5-5-2.5s-4 1-5 2.5c-.5-.5-1-1.5-1-2.5z" fill="#1E293B" />
+                        <path d="M7 34c0-6 5-11 11-11s11 5 11 11H7z" fill="#1E293B" />
+                        <path d="M15 23l3 8 3-8h-6z" fill="#EF4444" />
+                        <path d="M18 23l-2 5h4l-2-5z" fill="#FFFFFF" />
+                      </svg>
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                        Dasuni Thiwanshika Prem...
+                      </p>
+                      <p className="text-xs text-slate-400 dark:text-slate-400 truncate">
+                        dasunithiwanshika@gmail.com
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-100 dark:border-slate-800/80 py-1">
+                    {/* My Profile */}
+                    <Link
+                      href="#profile"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                    >
+                      <User className="w-4 h-4 text-slate-500" />
+                      <span>My Profile</span>
+                    </Link>
+
+                    {/* Dark Mode Switcher Row with Toggle Switch matching Screenshot 3 */}
+                    <div className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                      <div className="flex items-center gap-3">
+                        <Moon className="w-4 h-4 text-slate-500" />
+                        <span>Dark Mode</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={toggleTheme}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          theme === "dark" ? "bg-[#6c002c]" : "bg-slate-200"
+                        }`}
+                        role="switch"
+                        aria-checked={theme === "dark"}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                            theme === "dark" ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Logout Row in red matching Screenshot 3 */}
+                  <div className="border-t border-slate-100 dark:border-slate-800/80 p-1">
+                    <Link
+                      href="/login"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 text-red-600" />
+                      <span>Logout</span>
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
