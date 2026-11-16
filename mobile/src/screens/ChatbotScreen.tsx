@@ -16,13 +16,17 @@ import { sendChatMessageApi } from "../services/api";
 interface ChatbotScreenProps {
   onNavigate: (screen: string) => void;
   accountNumber?: string;
+  token?: string;
+  initialMode?: "guest" | "customer";
 }
 
 export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
   onNavigate,
-  accountNumber = "0412345678"
+  accountNumber = "0412345678",
+  token,
+  initialMode = "customer"
 }) => {
-  const [mode, setMode] = useState<"guest" | "customer">("customer");
+  const [mode, setMode] = useState<"guest" | "customer">(initialMode);
   const [language, setLanguage] = useState<"en" | "si" | "ta">("en");
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState("");
@@ -84,7 +88,8 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
         mode,
         language,
         accountNumber,
-        sessionIdRef.current
+        sessionIdRef.current,
+        token
       );
 
       const botMsg = {
@@ -99,7 +104,13 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
 
       setMessages((prev) => [...prev, botMsg]);
     } catch {
-      // Fallback
+      const botMsg = {
+        id: "ast-" + Date.now(),
+        sender: "assistant",
+        text: "⚠️ Connection interrupted. Please ensure the FastAPI backend is running.",
+        mode
+      };
+      setMessages((prev) => [...prev, botMsg]);
     } finally {
       setIsTyping(false);
       setTimeout(() => {
@@ -198,6 +209,46 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
               >
                 {m.text}
               </Text>
+
+              {/* Structured Response Card */}
+              {m.richCard && (
+                <View style={styles.richCardContainer}>
+                  <View style={styles.richCardHeader}>
+                    <Text style={styles.richCardTitle}>
+                      {m.richCard.type === "bill" ? "💳" : m.richCard.type === "complaint" ? "🚨" : m.richCard.type === "solar" ? "☀️" : "📊"} {m.richCard.title || "Service Details"}
+                    </Text>
+                  </View>
+                  {m.richCard.type === "bill" && (
+                    <View style={styles.richCardBody}>
+                      <Text style={styles.richCardMain}>
+                        Rs. {Number(m.richCard.data.total_amount || m.richCard.data.outstanding_balance || 4850).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      </Text>
+                      <Text style={styles.richCardSub}>Due Date: {m.richCard.data.due_date || "25 Nov 2026"}</Text>
+                      <TouchableOpacity style={styles.richCardBtn} onPress={() => onNavigate("bill-details")}>
+                        <Text style={styles.richCardBtnText}>View Itemized Bill →</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  {m.richCard.type === "complaint" && (
+                    <View style={styles.richCardBody}>
+                      <Text style={styles.richCardMain}>Ticket #{m.richCard.data.reference_number || "CMP-041-001"}</Text>
+                      <Text style={styles.richCardSub}>Status: {m.richCard.data.status || "IN_PROGRESS"}</Text>
+                      <TouchableOpacity style={styles.richCardBtn} onPress={() => onNavigate("complaints")}>
+                        <Text style={styles.richCardBtnText}>Track Complaint →</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  {m.richCard.type === "solar" && (
+                    <View style={styles.richCardBody}>
+                      <Text style={styles.richCardMain}>{m.richCard.data.available_capacity_kw || m.richCard.data.remaining_capacity_kw || 42} kW Capacity</Text>
+                      <Text style={styles.richCardSub}>Transformer: {m.richCard.data.transformer_code || "TR-402"}</Text>
+                      <TouchableOpacity style={styles.richCardBtn} onPress={() => onNavigate("solar")}>
+                        <Text style={styles.richCardBtnText}>Solar Feasibility →</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              )}
 
               {/* Action: Pay Now */}
               {m.actionRequired === "pay" && mode === "customer" && (
@@ -545,6 +596,52 @@ const styles = StyleSheet.create({
   sendBtnText: {
     color: "#FFFFFF",
     fontSize: 14,
+    fontWeight: "bold",
+  },
+  richCardContainer: {
+    marginTop: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    overflow: "hidden",
+  },
+  richCardHeader: {
+    backgroundColor: "#F9FAFB",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  richCardTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: Colors.primaryMaroon,
+  },
+  richCardBody: {
+    padding: 10,
+  },
+  richCardMain: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+  richCardSub: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginTop: 2,
+    marginBottom: 8,
+  },
+  richCardBtn: {
+    backgroundColor: Colors.primaryMaroon,
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    alignItems: "center",
+  },
+  richCardBtnText: {
+    color: "#FFFFFF",
+    fontSize: 11,
     fontWeight: "bold",
   },
 });

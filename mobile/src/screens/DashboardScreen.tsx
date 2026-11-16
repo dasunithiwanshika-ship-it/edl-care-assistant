@@ -10,12 +10,13 @@ import {
   Alert
 } from "react-native";
 import { Colors } from "../theme/colors";
-import { getCustomerProfileApi, getBillsApi } from "../services/api";
+import { getCustomerProfileApi, getBillsApi, payBillApi } from "../services/api";
 
 interface DashboardProps {
   onNavigate: (screen: string) => void;
   token?: string;
   isGuest?: boolean;
+  accountNumber?: string;
 }
 
 export const DashboardScreen: React.FC<DashboardProps> = ({
@@ -35,15 +36,28 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     });
   }, [token]);
 
-  const handlePayNow = () => {
+  const handlePayNow = async () => {
     setPaid(true);
-    setTimeout(() => {
+    const amountToPay = profile?.outstanding_balance || 4850.0;
+    try {
+      const res = await payBillApi(amountToPay, token, "LankaQR");
+      setPayModalVisible(false);
+      Alert.alert(
+        "Payment Confirmed",
+        `Receipt: ${res.transaction_id}\nAmount: Rs. ${Number(res.amount_paid).toLocaleString("en-US", { minimumFractionDigits: 2 })}\nNew Balance: Rs. ${Number(res.new_balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+      );
+      if (profile) {
+        setProfile({ ...profile, outstanding_balance: res.new_balance });
+      }
+    } catch {
       setPayModalVisible(false);
       Alert.alert("Payment Success", "Demonstration payment of Rs. 4,850.00 confirmed via LankaQR.");
       if (profile) {
         setProfile({ ...profile, outstanding_balance: 0.0 });
       }
-    }, 1200);
+    } finally {
+      setPaid(false);
+    }
   };
 
   if (loading) {

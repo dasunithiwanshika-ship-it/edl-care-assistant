@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,35 +6,79 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert
+  Alert,
+  ActivityIndicator
 } from "react-native";
 import { Colors } from "../theme/colors";
+import { createComplaintApi, getComplaintsApi } from "../services/api";
 
 interface ComplaintsProps {
   onNavigate: (screen: string) => void;
   accountNumber?: string;
+  token?: string;
+  isGuest?: boolean;
 }
 
 export const ComplaintsScreen: React.FC<ComplaintsProps> = ({
   onNavigate,
-  accountNumber = "0412345678"
+  accountNumber = "0412345678",
+  token,
+  isGuest
 }) => {
   const [category, setCategory] = useState("Breakdown");
   const [area, setArea] = useState("Colombo 05");
   const [phone, setPhone] = useState("0771234567");
   const [nature, setNature] = useState("");
-  const [submittedTicket, setSubmittedTicket] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedTicket, setSubmittedTicket] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [searchRef, setSearchRef] = useState("");
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    getComplaintsApi(token).then((data) => {
+      if (Array.isArray(data)) setHistory(data);
+    });
+  }, [token]);
+
+  const handleSubmit = async () => {
     if (!nature.trim()) {
       Alert.alert("Input Required", "Please enter the nature of the breakdown incident.");
       return;
     }
 
-    const tkt = `REF-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    setSubmittedTicket(tkt);
-    Alert.alert("Complaint Registered", `Ticket #${tkt} dispatched to the nearest Area Engineer Depot.`);
+    setSubmitting(true);
+    try {
+      const res = await createComplaintApi(
+        {
+          category: category.toUpperCase(),
+          description: nature.trim(),
+          area: area.trim(),
+          contact_phone: phone.trim(),
+          priority: "HIGH"
+        },
+        token
+      );
+
+      setSubmittedTicket(res);
+      setHistory((prev) => [res, ...prev]);
+      setNature("");
+      Alert.alert(
+        "Complaint Registered",
+        `Ticket #${res.reference_number} dispatched to the nearest Area Engineer Depot.`
+      );
+    } catch {
+      Alert.alert("Submission Notice", "Incident recorded in local demonstration mode.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const filteredHistory = history.filter((h) =>
+    searchRef.trim() === ""
+      ? true
+      : h.reference_number?.toLowerCase().includes(searchRef.toLowerCase()) ||
+        h.description?.toLowerCase().includes(searchRef.toLowerCase())
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -62,7 +106,7 @@ export const ComplaintsScreen: React.FC<ComplaintsProps> = ({
         <Text style={styles.fieldLabel}>Electricity Service Account</Text>
         <TextInput
           style={[styles.input, styles.inputDisabled]}
-          value={accountNumber}
+          value={isGuest ? "Guest (Unauthenticated)" : accountNumber}
           editable={false}
         />
 
@@ -107,8 +151,16 @@ export const ComplaintsScreen: React.FC<ComplaintsProps> = ({
           numberOfLines={4}
         />
 
-        <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-          <Text style={styles.submitBtnText}>Submit Breakdown Report</Text>
+        <TouchableOpacity
+          style={styles.submitBtn}
+          onPress={handleSubmit}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.submitBtnText}>Submit Breakdown Report</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -116,11 +168,49 @@ export const ComplaintsScreen: React.FC<ComplaintsProps> = ({
       {submittedTicket && (
         <View style={styles.ticketCard}>
           <Text style={styles.ticketTitle}>Active Ticket Reference</Text>
-          <Text style={styles.ticketNumber}>#{submittedTicket}</Text>
-          <Text style={styles.ticketStatus}>Status: IN_PROGRESS (Crew Dispatched)</Text>
+          <Text style={styles.ticketNumber}>#{submittedTicket.reference_number}</Text>
+          <Text style={styles.ticketStatus}>
+            Status: {submittedTicket.status || "IN_PROGRESS"} (Dispatched)
+          </Text>
           <Text style={styles.ticketEta}>Estimated Restoration: Within 4 hours</Text>
         </View>
       )}
+
+      {/* Complaint History & Tracking */}
+      <View style={styles.historySection}>
+        <Text style={styles.historyTitle}>Recent Incident Tickets</Text>
+        <TextInput
+          style={styles.searchHistoryInput}
+          placeholder="Search by Reference # (e.g. CMP-041-001)..."
+          value={searchRef}
+          onChangeText={setSearchRef}
+        />
+
+        {filteredHistory.map((item, idx) => (
+          <View key={item.id || idx} style={styles.historyCard}>
+            <View style={styles.historyCardHeader}>
+              <Text style={styles.historyRef}>#{item.reference_number}</Text>
+              <View
+                style={[
+                  styles.statusBadge,
+                  item.status === "RESOLVED"
+                    ? styles.statusResolved
+                    : item.status === "IN_PROGRESS"
+                    ? styles.statusInProgress
+                    : styles.statusPending
+                ]}
+              >
+                <Text style={styles.statusBadgeText}>{item.status}</Text>
+              </View>
+            </View>
+            <Text style={styles.historyCategory}>{item.category} • Priority: {item.priority || "NORMAL"}</Text>
+            <Text style={styles.historyDesc}>{item.description}</Text>
+            {item.created_at && (
+              <Text style={styles.historyDate}>Logged: {new Date(item.created_at).toLocaleDateString()}</Text>
+            )}
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 };
@@ -260,6 +350,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: "#FDE68A",
+    marginBottom: 16,
   },
   ticketTitle: {
     fontSize: 12,
@@ -281,5 +372,76 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#92400E",
     marginTop: 2,
+  },
+  historySection: {
+    marginTop: 8,
+  },
+  historyTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+    marginBottom: 8,
+  },
+  searchHistoryInput: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    marginBottom: 10,
+  },
+  historyCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  historyCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  historyRef: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: Colors.primaryMaroon,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  statusPending: {
+    backgroundColor: "#FEF3C7",
+  },
+  statusInProgress: {
+    backgroundColor: "#DBEAFE",
+  },
+  statusResolved: {
+    backgroundColor: "#D1FAE5",
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#1F2937",
+  },
+  historyCategory: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  historyDesc: {
+    fontSize: 12,
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  historyDate: {
+    fontSize: 10,
+    color: Colors.textSecondary,
   },
 });

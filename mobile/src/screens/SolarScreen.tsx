@@ -10,20 +10,36 @@ import {
   Alert
 } from "react-native";
 import { Colors } from "../theme/colors";
-import { getSolarCapacityApi } from "../services/api";
+import { getSolarCapacityApi, getSolarTransformersApi } from "../services/api";
 
 interface SolarScreenProps {
   onNavigate: (screen: string) => void;
+  accountNumber?: string;
 }
 
-export const SolarScreen: React.FC<SolarScreenProps> = ({ onNavigate }) => {
+export const SolarScreen: React.FC<SolarScreenProps> = ({ onNavigate, accountNumber = "0412345678" }) => {
   const [code, setCode] = useState("TR-402");
   const [capacity, setCapacity] = useState<any>(null);
+  const [transformers, setTransformers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    // Initial fetch of transformer list and default capacity
+    getSolarTransformersApi().then((list) => {
+      if (Array.isArray(list) && list.length > 0) {
+        setTransformers(list);
+      }
+    });
+    setLoading(true);
+    getSolarCapacityApi(code, accountNumber).then((data) => {
+      setCapacity(data);
+      setLoading(false);
+    });
+  }, []);
 
   const handleSearch = () => {
     setLoading(true);
-    getSolarCapacityApi(code).then((data) => {
+    getSolarCapacityApi(code, accountNumber).then((data) => {
       setCapacity(data);
       setLoading(false);
     });

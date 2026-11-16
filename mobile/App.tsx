@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   View,
@@ -16,27 +16,66 @@ import { ConsumptionScreen } from "./src/screens/ConsumptionScreen";
 import { ComplaintsScreen } from "./src/screens/ComplaintsScreen";
 import { SolarScreen } from "./src/screens/SolarScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
+import {
+  saveAuthToken,
+  getAuthToken,
+  saveSessionData,
+  getSessionData,
+  clearAllAuthSession
+} from "./src/services/storage";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<string>("dashboard");
-  const [token, setToken] = useState<string | undefined>("edl_demo_token_dasuni_2026");
+  const [token, setToken] = useState<string | undefined>(undefined);
   const [accountNumber, setAccountNumber] = useState<string>("0412345678");
-  const [isGuest, setIsGuest] = useState<boolean>(false);
+  const [isGuest, setIsGuest] = useState<boolean>(true);
+  const [isReady, setIsReady] = useState<boolean>(false);
 
-  const handleLoginSuccess = (userToken: string, accNum: string) => {
+  // Restore saved session from SecureStore on startup
+  useEffect(() => {
+    async function restoreSession() {
+      try {
+        const savedToken = await getAuthToken();
+        const { accountNumber: savedAcc } = await getSessionData();
+
+        if (savedToken && savedAcc) {
+          setToken(savedToken);
+          setAccountNumber(savedAcc);
+          setIsGuest(false);
+          setCurrentScreen("dashboard");
+        } else {
+          // Default to Guest Mode with quick demo access
+          setIsGuest(true);
+          setToken(undefined);
+          setCurrentScreen("dashboard");
+        }
+      } catch (err) {
+        console.warn("Session restore error:", err);
+      } finally {
+        setIsReady(true);
+      }
+    }
+    restoreSession();
+  }, []);
+
+  const handleLoginSuccess = async (userToken: string, accNum: string) => {
     setToken(userToken);
     setAccountNumber(accNum);
     setIsGuest(false);
+    await saveAuthToken(userToken);
+    await saveSessionData(accNum);
     setCurrentScreen("dashboard");
   };
 
-  const handleContinueAsGuest = () => {
+  const handleContinueAsGuest = async () => {
+    await clearAllAuthSession();
     setToken(undefined);
     setIsGuest(true);
     setCurrentScreen("dashboard");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await clearAllAuthSession();
     setToken(undefined);
     setIsGuest(true);
     setCurrentScreen("login");
@@ -57,6 +96,7 @@ export default function App() {
             onNavigate={setCurrentScreen}
             token={token}
             isGuest={isGuest}
+            accountNumber={accountNumber}
           />
         );
       case "chatbot":
@@ -64,28 +104,66 @@ export default function App() {
           <ChatbotScreen
             onNavigate={setCurrentScreen}
             accountNumber={accountNumber}
+            token={token}
+            initialMode={isGuest ? "guest" : "customer"}
           />
         );
       case "outages":
         return <OutageMapScreen onNavigate={setCurrentScreen} />;
       case "bill-details":
-        return <BillDetailsScreen onNavigate={setCurrentScreen} token={token} />;
+        return (
+          <BillDetailsScreen
+            onNavigate={setCurrentScreen}
+            token={token}
+            accountNumber={accountNumber}
+          />
+        );
       case "consumption":
-        return <ConsumptionScreen onNavigate={setCurrentScreen} token={token} />;
+        return (
+          <ConsumptionScreen
+            onNavigate={setCurrentScreen}
+            token={token}
+            accountNumber={accountNumber}
+          />
+        );
       case "complaints":
-        return <ComplaintsScreen onNavigate={setCurrentScreen} accountNumber={accountNumber} />;
+        return (
+          <ComplaintsScreen
+            onNavigate={setCurrentScreen}
+            accountNumber={accountNumber}
+            token={token}
+            isGuest={isGuest}
+          />
+        );
       case "solar":
-        return <SolarScreen onNavigate={setCurrentScreen} />;
+        return (
+          <SolarScreen
+            onNavigate={setCurrentScreen}
+            accountNumber={accountNumber}
+          />
+        );
       default:
         return (
           <DashboardScreen
             onNavigate={setCurrentScreen}
             token={token}
             isGuest={isGuest}
+            accountNumber={accountNumber}
           />
         );
     }
   };
+
+  if (!isReady) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor={Colors.darkMaroon} />
+        <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+          <Text style={{ color: "#FFFFFF", fontWeight: "bold" }}>⚡ EDL CARE ASSISTANT</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -138,9 +216,9 @@ export default function App() {
             style={styles.tabItem}
             onPress={() => (isGuest ? setCurrentScreen("login") : handleLogout())}
           >
-            <Text style={styles.tabIcon}>{isGuest ? "🔑" : "👤"}</Text>
+            <Text style={styles.tabIcon}>{isGuest ? "🔑" : "🚪"}</Text>
             <Text style={[styles.tabLabel, currentScreen === "login" && styles.tabLabelActive]}>
-              {isGuest ? "Sign In" : "Profile"}
+              {isGuest ? "Sign In" : "Sign Out"}
             </Text>
           </TouchableOpacity>
         </View>

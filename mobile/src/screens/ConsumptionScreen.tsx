@@ -13,9 +13,10 @@ import { getConsumptionApi } from "../services/api";
 interface ConsumptionProps {
   onNavigate: (screen: string) => void;
   token?: string;
+  accountNumber?: string;
 }
 
-export const ConsumptionScreen: React.FC<ConsumptionProps> = ({ onNavigate, token }) => {
+export const ConsumptionScreen: React.FC<ConsumptionProps> = ({ onNavigate, token, accountNumber = "0412345678" }) => {
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

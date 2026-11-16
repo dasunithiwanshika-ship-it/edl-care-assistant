@@ -29,8 +29,8 @@ export const LoginScreen: React.FC<LoginProps> = ({
     try {
       const res = await loginApi(username, password);
       onLoginSuccess(res.access_token, res.account_number);
-    } catch {
-      Alert.alert("Error", "Login failed. Please verify credentials.");
+    } catch (err: any) {
+      Alert.alert("Authentication Failed", err.message || "Invalid account number or password.");
     } finally {
       setLoading(false);
     }
