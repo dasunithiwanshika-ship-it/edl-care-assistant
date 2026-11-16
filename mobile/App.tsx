@@ -5,7 +5,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  StatusBar
+  StatusBar,
+  Alert
 } from "react-native";
 import { Colors } from "./src/theme/colors";
 import { DashboardScreen } from "./src/screens/DashboardScreen";
@@ -16,6 +17,7 @@ import { ConsumptionScreen } from "./src/screens/ConsumptionScreen";
 import { ComplaintsScreen } from "./src/screens/ComplaintsScreen";
 import { SolarScreen } from "./src/screens/SolarScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
+import { setSessionExpiredHandler } from "./src/services/api";
 import {
   saveAuthToken,
   getAuthToken,
@@ -33,6 +35,14 @@ export default function App() {
 
   // Restore saved session from SecureStore on startup
   useEffect(() => {
+    // Configure automatic session expiry handler
+    setSessionExpiredHandler(() => {
+      setToken(undefined);
+      setIsGuest(true);
+      Alert.alert("Session Expired", "Your login session has expired. Please sign in again.");
+      setCurrentScreen("login");
+    });
+
     async function restoreSession() {
       try {
         const savedToken = await getAuthToken();

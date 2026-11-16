@@ -6,7 +6,21 @@
 
 import { Platform } from "react-native";
 import Constants from "expo-constants";
-import { getAuthToken } from "./storage";
+import { getAuthToken, removeAuthToken } from "./storage";
+
+type SessionExpiredHandler = () => void;
+let sessionExpiredHandler: SessionExpiredHandler | null = null;
+
+export function setSessionExpiredHandler(handler: SessionExpiredHandler | null) {
+  sessionExpiredHandler = handler;
+}
+
+export function handleSessionExpired() {
+  removeAuthToken();
+  if (sessionExpiredHandler) {
+    sessionExpiredHandler();
+  }
+}
 
 /**
  * Resolves the backend API Base URL based on runtime environment:
@@ -155,6 +169,9 @@ export async function getCustomerProfileApi(passedToken?: string) {
     if (res.ok) {
       return await res.json();
     }
+    if (res.status === 401 && token) {
+      handleSessionExpired();
+    }
   } catch (err) {
     // Offline
   }
@@ -189,6 +206,9 @@ export async function getBillsApi(passedToken?: string) {
     const res = await fetchWithTimeout(`${baseUrl}/customers/me/bills`, { headers }, 4000);
     if (res.ok) {
       return await res.json();
+    }
+    if (res.status === 401 && token) {
+      handleSessionExpired();
     }
   } catch (err) {
     // Offline
@@ -238,6 +258,9 @@ export async function getConsumptionApi(passedToken?: string) {
     const res = await fetchWithTimeout(`${baseUrl}/customers/me/consumption`, { headers }, 4000);
     if (res.ok) {
       return await res.json();
+    }
+    if (res.status === 401 && token) {
+      handleSessionExpired();
     }
   } catch (err) {
     // Offline

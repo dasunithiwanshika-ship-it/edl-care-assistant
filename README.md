@@ -127,8 +127,8 @@ python -m backend.mock_data.seed
 # Run automated test suite (17 tests)
 python -m pytest backend/tests/test_api.py -v
 
-# Start FastAPI server (Port 8000)
-uvicorn backend.app.main:app --reload --port 8000
+# Start FastAPI server (Port 8000 on 0.0.0.0 for Web & Mobile access)
+python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 FastAPI Swagger Documentation will be accessible at [http://localhost:8000/docs](http://localhost:8000/docs).
@@ -154,28 +154,40 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 # Navigate to mobile directory
 cd mobile
 
+# Run automated 15-test mobile integration test suite
+node tests/test_mobile_integration.mjs
+
 # Start Expo development server
 npx expo start
 ```
 
-Press `w` to open in web browser, or scan the QR code using Expo Go on your mobile device.
+- Press `w` to open in web browser preview.
+- Press `a` for Android Emulator (`10.0.2.2:8000`).
+- Scan the terminal QR code with **Expo Go** on Android/iOS (auto-detects host machine Wi-Fi IP).
 
 ---
 
-## 🧪 8. Automated Test Suite (17 Scenarios Passed)
+## 🧪 8. Automated Test Suites (32 Automated Tests Passed)
 
-Run the test suite at any time:
+### Backend API Test Suite (17 Tests)
 ```bash
 python -m pytest backend/tests/test_api.py -v
 ```
 
-All 17 tests validate:
+### Mobile Integration Test Suite (15 Tests)
+```bash
+node mobile/tests/test_mobile_integration.mjs
+```
+
+All 32 tests validate:
 - API health and architecture declaration.
 - Demo customer authentication and PBKDF2 password verification.
 - Customer account isolation (customers can only access their own bills and records).
-- Instant bill payment balance deductions.
-- Emergency breakdown complaint logging and ticket status tracking.
-- Grid outage listing with coordinates.
+- Secure JWT bearer token management via Expo SecureStore.
+- Automatic session expiration and logout handling.
+- Instant bill payment balance deductions via LankaQR.
+- Emergency breakdown complaint logging and ticket status tracking in SQLite.
+- Grid outage listing with geographic coordinates.
 - Solar transformer capacity quota calculations.
 - Option C Guest permission gating (`action_required="login"` on private queries).
 - Option C Authenticated customer inquiries with rich UI card payloads.
