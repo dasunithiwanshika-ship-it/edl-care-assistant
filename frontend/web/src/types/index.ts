@@ -55,6 +55,12 @@ export interface ChatMessage {
   quickReplies?: string[];
   isMockResponse?: boolean;
   actionRequired?: 'login' | 'pay' | 'bill-details' | 'complaint';
+  richCard?: {
+    type: 'bill' | 'consumption' | 'complaint' | 'outage' | 'solar';
+    title: string;
+    data: any;
+  };
+  sources?: string[];
 }
 
 export interface QuickServiceItem {

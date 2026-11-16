@@ -1,0 +1,35 @@
+# ELECTRICITY DISTRIBUTION LANKA (EDL)
+## ELECTRICAL SAFETY GUIDELINES & EMERGENCY PROTOCOLS
+Source: EDL Public Safety & Operational Health Division
+Document ID: EDL-SAF-STD-2026
+Category: Electrical Safety & Hazard Prevention
+
+### 1. Mandatory Domestic Safety Measures
+Electricity is vital for daily life but carries severe hazards of electrocution, flash burns, and domestic fires if safety standards are neglected.
+
+1. Earth Leakage Circuit Breaker (ELCB / Residual Current Device / Trip Switch):
+   - Every home must have a functional 30mA sensitivity ELCB installed at the main consumer unit.
+   - Monthly Routine Test: Press the test button labeled "T" or "Test" once every month. If the switch trips instantly, the breaker is healthy. If it does not trip, contact a licensed electrician immediately.
+
+2. Prevention of Electrical Shocks:
+   - Never handle electric switches, wall plugs, or appliances with wet hands or while standing bare-foot on damp floors.
+   - Never pull appliances by their flexible cords; always grip the insulated plug head.
+   - Keep all electrical equipment away from bathtubs, sinks, garden hoses, and swimming pools.
+   - Install tamper-resistant safety socket covers in homes with young children.
+
+3. Outdoor & Overhead Power Line Precautions:
+   - Maintain a minimum horizontal clearance of at least 3.0 meters (10 feet) between tree branches, building scaffolds, or antennas and EDL high-voltage/low-voltage distribution lines.
+   - Do not attempt to prune tree limbs encroaching within 3 meters of overhead power wires yourself. Request free professional clearing from your EDL Depot by calling 1987.
+   - Avoid flying kites, erecting flag poles, or maneuvering long metallic pipes near power cables.
+
+### 2. Emergency Breakdown & Fallen Wire Protocols
+* Fallen Conductors on the Ground:
+  - ALWAYS treat any fallen wire as energized (live) and lethal, even if not sparking or smoking.
+  - Maintain a strict perimeter of at least 10 meters (33 feet) away from the wire and wet ground surrounding it.
+  - Warn pedestrians and motorists to stay clear.
+  - Call the EDL 24-Hour National Emergency Hotline at 1987 immediately.
+
+* Domestic Electrical Fire:
+  - Never throw water onto an electrical fire. Water conducts electricity and causes fatal electrocution.
+  - Switch off the main circuit breaker at the distribution box if accessible safely.
+  - Use a Class C Dry Powder or Carbon Dioxide (CO2) fire extinguisher, or call Emergency Fire Services (110).

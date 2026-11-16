@@ -17,20 +17,29 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { EDLCareLogo } from "@/components/EDLCareLogo";
+import { useApp } from "@/components/AppContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("0757800822");
-  const [password, setPassword] = useState("••••••••••••");
+  const { login } = useApp();
+  const [username, setUsername] = useState("0412345678");
+  const [password, setPassword] = useState("demo123");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    setErrorMessage(null);
+    try {
+      await login(username.trim(), password.trim());
       router.push("/");
-    }, 600);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Invalid credentials. Please verify your demo account details.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -172,6 +181,46 @@ export default function LoginPage() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs font-semibold">
+                  {errorMessage}
+                </div>
+              )}
+
+              {/* Quick Demo Credentials Selector */}
+              <div className="pt-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                  Fast Demo Logins (Click to autofill):
+                </span>
+                <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => { setUsername("0412345678"); setPassword("demo123"); }}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:border-[#6c002c] text-left"
+                  >
+                    <span className="font-bold block text-slate-800 dark:text-slate-200">Low Usage</span>
+                    <span className="text-slate-500">0412345678</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setUsername("0723456789"); setPassword("demo123"); }}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:border-[#6c002c] text-left"
+                  >
+                    <span className="font-bold block text-slate-800 dark:text-slate-200">High Usage</span>
+                    <span className="text-slate-500">0723456789</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setUsername("0134567890"); setPassword("demo123"); }}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:border-[#6c002c] text-left"
+                  >
+                    <span className="font-bold block text-slate-800 dark:text-slate-200">Solar PV</span>
+                    <span className="text-slate-500">0134567890</span>
                   </button>
                 </div>
               </div>

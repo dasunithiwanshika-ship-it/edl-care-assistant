@@ -1,9 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { Language, Theme, CustomerAccount, ChatMode } from "@/types";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { Language, Theme, CustomerAccount, ChatMode, ConsumptionDataPoint } from "@/types";
 import { TRANSLATIONS, TranslationStrings } from "@/data/translations";
-import { MOCK_CUSTOMER_ACCOUNT } from "@/data/mockData";
+import { MOCK_CUSTOMER_ACCOUNT, MOCK_CONSUMPTION_DATA } from "@/data/mockData";
+import { api } from "@/services/api";
 
 interface AppContextType {
   language: Language;
@@ -12,7 +13,12 @@ interface AppContextType {
   theme: Theme;
   toggleTheme: () => void;
   account: CustomerAccount;
-  payBill: (amount: number) => void;
+  bills: any[];
+  consumptionData: ConsumptionDataPoint[];
+  refreshAccount: () => Promise<void>;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  payBill: (amount: number) => Promise<void>;
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
   chatMode: ChatMode;
@@ -47,6 +53,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("en");
   const [theme, setTheme] = useState<Theme>("light");
   const [account, setAccount] = useState<CustomerAccount>(MOCK_CUSTOMER_ACCOUNT);
+  const [bills, setBills] = useState<any[]>([]);
+  const [consumptionData, setConsumptionData] = useState<ConsumptionDataPoint[]>(MOCK_CONSUMPTION_DATA);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMode, setChatMode] = useState<ChatMode>("customer");
   const [initialChatQuery, setInitialChatQuery] = useState<string | null>(null);
@@ -60,6 +68,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeView, setActiveView] = useState<"portal" | "dashboard">("portal");
   const [notificationCount, setNotificationCount] = useState(2);
+
+  const mapProfileToAccount = (profile: any): CustomerAccount => ({
+    accountNumber: profile.account_number || "0412345678",
+    nickname: "Home",
+    customerName: profile.full_name || "Dasuni Thiwanshika Premawardana",
+    tariffCategory: profile.tariff_category || "Domestic (D-1)",
+    premisesAddress: profile.premises_address || "No. 42, Sri Jayawardenepura Mw, Colombo 05",
+    billingMonth: "October 2026",
+    outstandingBalance: profile.outstanding_balance ?? 4850.0,
+    dueDate: profile.due_date || "2026-11-25",
+    lastPaymentDate: "2026-10-15",
+    lastPaymentAmount: 5200.0,
+    monthlyAverageKwh: profile.monthly_average_kwh || 150,
+    isFictionalDemo: true,
+  });
+
+  const refreshAccount = useCallback(async () => {
+    try {
+      const token = api.getToken();
+      if (!token) return;
+
+      const profile = await api.getMyProfile();
+      if (profile) {
+        setAccount(mapProfileToAccount(profile));
+        setIsLoggedIn(true);
+      }
+
+      const billsData = await api.getMyBills().catch(() => []);
+      if (Array.isArray(billsData) && billsData.length > 0) {
+        setBills(billsData);
+      }
+
+      const usage = await api.getMyConsumption().catch(() => []);
+      if (Array.isArray(usage) && usage.length > 0) {
+        const mapped: ConsumptionDataPoint[] = usage.map((u: any) => ({
+          month: u.month,
+          year: u.year,
+          kwh: u.units_kwh,
+          amount: u.amount_lkr,
+          units: u.units_kwh,
+        }));
+        setConsumptionData(mapped);
+      }
+    } catch (e) {
+      console.warn("Failed to load customer profile from backend:", e);
+    }
+  }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("edl_theme") as Theme | null;
@@ -75,7 +130,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (savedLang) {
       setLanguage(savedLang);
     }
-  }, []);
+
+    // Check if token exists in localStorage
+    const existingToken = api.getToken();
+    if (existingToken) {
+      setIsLoggedIn(true);
+      setChatMode("customer");
+      refreshAccount();
+    }
+  }, [refreshAccount]);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
@@ -93,13 +156,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const payBill = (amount: number) => {
-    setAccount((prev) => ({
-      ...prev,
-      outstandingBalance: Math.max(0, prev.outstandingBalance - amount),
-      lastPaymentDate: new Date().toISOString().split("T")[0],
-      lastPaymentAmount: amount,
-    }));
+  const login = async (username: string, password: string): Promise<boolean> => {
+    try {
+      await api.login(username, password);
+      setIsLoggedIn(true);
+      setChatMode("customer");
+      await refreshAccount();
+      return true;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    api.logout();
+    setIsLoggedIn(false);
+    setChatMode("guest");
+    setAccount(MOCK_CUSTOMER_ACCOUNT);
+    setBills([]);
+    setConsumptionData(MOCK_CONSUMPTION_DATA);
+  };
+
+  const payBill = async (amount: number) => {
+    try {
+      await api.payBill(amount).catch(() => null);
+    } finally {
+      setAccount((prev) => ({
+        ...prev,
+        outstandingBalance: Math.max(0, prev.outstandingBalance - amount),
+        lastPaymentDate: new Date().toISOString().split("T")[0],
+        lastPaymentAmount: amount,
+      }));
+      refreshAccount().catch(() => null);
+    }
   };
 
   const openChatWithQuery = (query: string, mode?: ChatMode) => {
@@ -119,6 +209,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         theme,
         toggleTheme,
         account,
+        bills,
+        consumptionData,
+        refreshAccount,
+        login,
+        logout,
         payBill,
         isChatOpen,
         setIsChatOpen,

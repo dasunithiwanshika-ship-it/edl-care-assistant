@@ -1,14 +1,16 @@
 """
 FastAPI Server for EDL Care Assistant Backend (Option C Architecture)
-Provides unified chat endpoint with Guest vs Authenticated Customer separation.
+Provides complete API gateway for authentication, customer accounts, complaints, outages, solar capacity, and AI chat.
 """
 
-from typing import List, Dict, Any, Optional
-from fastapi import FastAPI, Depends, Header
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.models import ChatRequest, ChatResponse, ChatMode, FeatureMatrixItem
-from backend.app.auth import resolve_access_scope
-from backend.chatbot.engine import ChatbotEngine
+from backend.app.database import engine, Base
+from backend.app.routers import auth, customers, complaints, outages, solar, chat
+from backend.services.gemini_service import gemini_service
+
+# Initialize database tables on startup
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="EDL Care Assistant API",
@@ -16,7 +18,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Enable CORS for Next.js frontend and React Native Expo app
+# Enable CORS for Next.js web frontend (localhost:3000) and React Native Expo (localhost:8081 / 19006)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,7 +27,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-engine = ChatbotEngine()
+# Register routers
+app.include_router(auth.router)
+app.include_router(customers.router)
+app.include_router(complaints.router)
+app.include_router(outages.router)
+app.include_router(solar.router)
+app.include_router(chat.router)
 
 @app.get("/api/health")
 def health_check():
@@ -33,48 +41,10 @@ def health_check():
         "status": "healthy",
         "service": "EDL Care Assistant Backend",
         "architecture": "Option C – Guest + Login-Based AI Chatbot",
-        "gemini_active": engine.model is not None,
+        "gemini_active": gemini_service.is_active,
+        "database": "SQLite (Connected)",
+        "rag_engine": "ChromaDB (Indexed)"
     }
-
-@app.post("/api/chat", response_model=ChatResponse)
-def handle_chat(
-    req: ChatRequest,
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Unified chat endpoint implementing Option C access separation:
-    - Guest Mode: Queries public RAG knowledge; rejects personal account lookups.
-    - Customer Mode: Verifies authentication and injects personalized account records.
-    """
-    mode, scope, verified_account = resolve_access_scope(
-        authorization=authorization,
-        requested_mode=req.mode,
-        account_number=req.account_number
-    )
-
-    response = engine.process_message(
-        message=req.message,
-        mode=mode,
-        language=req.language,
-        account_number=verified_account
-    )
-    return response
-
-@app.get("/api/features", response_model=List[FeatureMatrixItem])
-def get_feature_matrix():
-    """
-    Official Feature Comparison Matrix (Option C Specification)
-    """
-    return [
-        FeatureMatrixItem(feature="General electricity FAQs", guest=True, customer=True),
-        FeatureMatrixItem(feature="Tariff explanations", guest=True, customer=True),
-        FeatureMatrixItem(feature="Electrical safety guidance", guest=True, customer=True),
-        FeatureMatrixItem(feature="General outage guidance", guest=True, customer=True),
-        FeatureMatrixItem(feature="Personal bill details", guest=False, customer=True, guest_note="Requires login", customer_note="Full access"),
-        FeatureMatrixItem(feature="Personal consumption", guest=False, customer=True, guest_note="Requires login", customer_note="Full access"),
-        FeatureMatrixItem(feature="Personal complaint tracking", guest=False, customer=True, guest_note="Requires login", customer_note="Full access"),
-        FeatureMatrixItem(feature="Personalized account assistance", guest=False, customer=True, guest_note="Requires login", customer_note="Full access"),
-    ]
 
 if __name__ == "__main__":
     import uvicorn

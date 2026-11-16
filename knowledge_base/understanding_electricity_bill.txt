@@ -1,0 +1,46 @@
+# ELECTRICITY DISTRIBUTION LANKA (EDL)
+## COMPREHENSIVE GUIDE TO UNDERSTANDING YOUR ELECTRICITY BILL
+Source: EDL Customer Billing Services Division & PUCSL Consumer Guide
+Document ID: EDL-BILL-GUIDE-2026
+Category: Customer Billing & Payments
+
+### 1. Structure of an EDL Domestic Electricity Statement
+Every monthly electricity bill issued by Electricity Distribution Lanka comprises specific itemized accounting components:
+
+1. Account Identification:
+   - Account Number: 10-digit unique electricity service identifier (e.g. 0412345678).
+   - Customer Name and Registered Premises Address.
+   - Tariff Category: Typically D-1 for residential dwellings.
+   - Connected Area Engineer Depot and Meter Serial Number.
+
+2. Meter Reading Telemetry:
+   - Reading Date: Date on which the meter reader recorded the display or smart meter synchronized.
+   - Previous Meter Reading (kWh).
+   - Present Meter Reading (kWh).
+   - Total Units Consumed = Present Reading minus Previous Reading.
+   - Billing Days: Standard monthly cycle spans 28 to 32 calendar days.
+
+3. Financial Charges Breakdown:
+   - Energy Charge (Rs.): Tiered unit rate multiplied by the respective kWh allocated to each block.
+   - Fixed Monthly Service Charge (Rs.): Grid access, customer servicing, and infrastructure maintenance fee based on total monthly tier.
+   - Fuel Adjustment Surcharge (FAS): Fuel cost balancing adjustment if applicable.
+   - Adjustments / Rebates: Credits for solar export or authorized corrections.
+   - Total Current Billing Month Charges: Sum of energy charge, fixed fee, and levies.
+
+4. Outstanding Balances & Arrears:
+   - Previous Balance Brought Forward.
+   - Less: Payments Made since the previous billing cycle.
+   - Outstanding Arrears: Unpaid balance remaining from preceding months.
+   - Total Amount Payable = Current Month Charges + Outstanding Arrears.
+
+5. Payment Deadlines and Penalties:
+   - Due Date: Exactly 30 calendar days from the bill issue date.
+   - Late Payment Surcharge: An interest charge of 1.5% per month is levied on outstanding arrears exceeding the grace period.
+   - Disconnection Warning: Issued if balances remain unsettled for more than 45 days after the due date.
+
+### 2. Digital Payment Methods
+Customers can settle their accounts instantly through:
+- EDL Care Web Portal (Simulated LankaQR, Debit/Credit Cards).
+- EDL Care Mobile Application.
+- Online Banking and Automated Standing Orders.
+- Post Offices and EDL Commercial Centers island-wide.

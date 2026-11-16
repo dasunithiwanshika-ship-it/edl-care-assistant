@@ -1,0 +1,36 @@
+# ELECTRICITY DISTRIBUTION LANKA (EDL)
+## ROOFTOP SOLAR PV INTERCONNECTION GUIDELINES & TRANSFORMER CAPACITY
+Source: EDL Renewable Energy Directorate & Sri Lanka Sustainable Energy Authority (SLSEA)
+Document ID: EDL-REN-SOL-2026
+Category: Solar Photovoltaic & Net-Metering Schemes
+
+### 1. Rooftop Solar Photovoltaic (PV) Grid Schemes
+Sri Lankan electricity consumers with suitable rooftop area can connect solar PV systems to the national grid under three statutory commercial schemes:
+
+1. Net-Metering:
+   - Generated solar power is consumed on-site first.
+   - Surplus solar energy is exported to the EDL grid and credited in kilowatt-hours (kWh).
+   - If customer imports more than exported, they pay the difference. If they export more than imported, units roll forward as an energy banking credit for up to 10 years.
+   - No monetary payout is made by EDL under Net-Metering; credits offset future electricity units.
+
+2. Net-Accounting:
+   - Exported units and imported units are settled financially each month.
+   - If solar generation exceeds consumption, EDL pays the customer the difference in cash at the PUCSL-approved fixed feed-in tariff rate per kWh.
+   - If consumption exceeds generation, the customer settles the net bill at regular domestic tariff rates.
+
+3. Net-Plus:
+   - 100% of generated solar electricity is exported directly to the EDL grid through a dedicated export generation meter.
+   - The customer's household consumption is metered independently through a separate standard import meter and billed at normal domestic tariffs.
+   - EDL pays the customer directly for every single unit generated at the statutory long-term Power Purchase Agreement (PPA) rate.
+
+### 2. Distribution Transformer Hosting Capacity Quota
+To maintain voltage stability and prevent reverse-power transformer overloading:
+- Each distribution transformer (e.g. 11kV/400V 160kVA or 250kVA substation) is subject to a strict 80% solar hosting capacity threshold.
+- If total solar PV installations already connected to a local transformer reach 80% of its rated kVA, subsequent applications must be wait-listed until EDL executes transformer capacity uprating or network augmentation.
+- Customers can verify transformer hosting capacity instantly via the EDL Care "Solar Capacity Checker" by entering their substation code (e.g., TR-402, TR-105).
+
+### 3. Application Prerequisites
+- Duly completed EDL Renewable Energy Grid Interconnection Application Form.
+- System installation by an SLSEA-accredited solar PV service provider.
+- Inverter compliance with IEEE 1547 / IEC 62116 anti-islanding safety disconnect protection.
+- Dual-channel bi-directional smart meter installation by authorized EDL technicians.

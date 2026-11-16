@@ -16,7 +16,7 @@ import { MOCK_CONSUMPTION_DATA } from "@/data/mockData";
 import { formatCurrency } from "@/lib/utils";
 
 export const MonthlyUsageCard: React.FC = () => {
-  const { t, theme } = useApp();
+  const { t, theme, consumptionData } = useApp();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export const MonthlyUsageCard: React.FC = () => {
         {mounted ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={MOCK_CONSUMPTION_DATA}
+              data={consumptionData && consumptionData.length > 0 ? consumptionData : MOCK_CONSUMPTION_DATA}
               margin={{ top: 10, right: 15, left: -20, bottom: 0 }}
             >
               <defs>

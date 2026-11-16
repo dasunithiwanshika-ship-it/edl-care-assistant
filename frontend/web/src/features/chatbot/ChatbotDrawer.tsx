@@ -24,11 +24,16 @@ import {
   Sun,
   CheckCircle2,
   Table,
-  HelpCircle
+  HelpCircle,
+  Clock,
+  BookOpen,
+  Activity,
+  Layers
 } from "lucide-react";
 import { useApp } from "@/components/AppContext";
 import { ChatMessage, Language, ChatMode } from "@/types";
 import { formatCurrency } from "@/lib/utils";
+import { api } from "@/services/api";
 
 export const ChatbotDrawer: React.FC = () => {
   const { 
@@ -50,6 +55,7 @@ export const ChatbotDrawer: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showMatrixModal, setShowMatrixModal] = useState(false);
+  const sessionIdRef = useRef<string>("sess-" + Math.random().toString(36).substring(2, 9));
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize welcome message based on active mode and language
@@ -66,7 +72,7 @@ export const ChatbotDrawer: React.FC = () => {
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         language: language,
         mode: chatMode,
-        isMockResponse: true,
+        isMockResponse: false,
       },
     ]);
   }, [language, chatMode, t.chatbot.guestWelcomeMsg, t.chatbot.customerWelcomeMsg]);
@@ -86,23 +92,23 @@ export const ChatbotDrawer: React.FC = () => {
 
   // Quick reply questions dynamic to active mode
   const guestQuickReplies = [
-    { key: "understandBill", text: t.chatbot.quickReplies.understandBill, answer: t.chatbot.mockAnswers.understandBill },
-    { key: "tariffExpl", text: t.chatbot.quickReplies.tariffExpl, answer: t.chatbot.mockAnswers.tariffExpl },
-    { key: "safetyGuide", text: t.chatbot.quickReplies.safetyGuide, answer: t.chatbot.mockAnswers.safetyGuide },
-    { key: "generalOutage", text: t.chatbot.quickReplies.generalOutage, answer: t.chatbot.mockAnswers.generalOutage },
-    { key: "guestBillCheck", text: t.chatbot.quickReplies.guestBillCheck, answer: t.chatbot.mockAnswers.guestBillCheck, action: "login" as const },
+    { key: "understandBill", text: t.chatbot.quickReplies.understandBill },
+    { key: "tariffExpl", text: t.chatbot.quickReplies.tariffExpl },
+    { key: "safetyGuide", text: t.chatbot.quickReplies.safetyGuide },
+    { key: "generalOutage", text: t.chatbot.quickReplies.generalOutage },
+    { key: "guestBillCheck", text: t.chatbot.quickReplies.guestBillCheck },
   ];
 
   const customerQuickReplies = [
-    { key: "myBill", text: t.chatbot.quickReplies.myBill, answer: t.chatbot.mockAnswers.myBill, action: "pay" as const },
-    { key: "myConsumption", text: t.chatbot.quickReplies.myConsumption, answer: t.chatbot.mockAnswers.myConsumption },
-    { key: "trackComplaint", text: t.chatbot.quickReplies.trackComplaint, answer: t.chatbot.mockAnswers.trackComplaint },
-    { key: "mySolar", text: t.chatbot.quickReplies.mySolar, answer: t.chatbot.mockAnswers.mySolar },
+    { key: "myBill", text: t.chatbot.quickReplies.myBill },
+    { key: "myConsumption", text: t.chatbot.quickReplies.myConsumption },
+    { key: "trackComplaint", text: t.chatbot.quickReplies.trackComplaint },
+    { key: "mySolar", text: t.chatbot.quickReplies.mySolar },
   ];
 
   const activeQuickReplies = chatMode === "guest" ? guestQuickReplies : customerQuickReplies;
 
-  const handleUserSend = (textToSend?: string) => {
+  const handleUserSend = async (textToSend?: string) => {
     const text = (textToSend || inputValue).trim();
     if (!text) return;
 
@@ -119,80 +125,50 @@ export const ChatbotDrawer: React.FC = () => {
     if (!textToSend) setInputValue("");
     setIsTyping(true);
 
-    const lower = text.toLowerCase();
-    let matchedAnswer = t.chatbot.mockAnswers.defaultFallback;
-    let actionReq: 'login' | 'pay' | 'bill-details' | 'complaint' | undefined = undefined;
+    try {
+      // Send query to FastAPI backend with bearer token, mode, language, and session ID
+      const data = await api.sendChat({
+        message: text,
+        mode: chatMode,
+        language: language,
+        account_number: account?.accountNumber || "0412345678",
+        session_id: sessionIdRef.current,
+      });
 
-    // OPTION C GATE ENFORCEMENT
-    if (chatMode === "guest") {
-      // If a guest requests personal bill / account information
-      if (
-        lower.includes("outstanding") || 
-        lower.includes("my bill") || 
-        lower.includes("balance") || 
-        lower.includes("මගේ බිල") || 
-        lower.includes("ශේෂය") || 
-        lower.includes("நிலுவை")
-      ) {
-        matchedAnswer = t.chatbot.mockAnswers.guestBillCheck;
-        actionReq = "login";
-      } else if (lower.includes("understand") || lower.includes("how can i understand") || lower.includes("තේරුම්") || lower.includes("புரிந்து")) {
-        matchedAnswer = t.chatbot.mockAnswers.understandBill;
-      } else if (lower.includes("tariff") || lower.includes("rate") || lower.includes("ගාස්තු") || lower.includes("கட்டண முறை")) {
-        matchedAnswer = t.chatbot.mockAnswers.tariffExpl;
-      } else if (lower.includes("safety") || lower.includes("precaution") || lower.includes("hazard") || lower.includes("ආරක්ෂ") || lower.includes("பாதுகாப்பு")) {
-        matchedAnswer = t.chatbot.mockAnswers.safetyGuide;
-      } else if (lower.includes("outage") || lower.includes("power") || lower.includes("light") || lower.includes("ඇනහිට") || lower.includes("மின்தடை")) {
-        matchedAnswer = t.chatbot.mockAnswers.generalOutage;
-      } else if (lower.includes("solar") || lower.includes("සූර්ය") || lower.includes("சூரிய")) {
-        matchedAnswer = t.chatbot.mockAnswers.solarCapacity;
-      } else if (lower.includes("breakdown") || lower.includes("report") || lower.includes("දෝෂ") || lower.includes("புகார்")) {
-        matchedAnswer = t.chatbot.mockAnswers.reportBreakdown;
-      }
-    } else {
-      // CUSTOMER MODE: Full personalized access
-      if (
-        lower.includes("outstanding") || 
-        lower.includes("my bill") || 
-        lower.includes("balance") || 
-        lower.includes("මගේ බිල") || 
-        lower.includes("ශේෂය") || 
-        lower.includes("நிலுவை")
-      ) {
-        matchedAnswer = t.chatbot.mockAnswers.myBill;
-        actionReq = "pay";
-      } else if (lower.includes("consumption") || lower.includes("usage") || lower.includes("kwh") || lower.includes("පරිභෝජන") || lower.includes("நுகர்வு")) {
-        matchedAnswer = t.chatbot.mockAnswers.myConsumption;
-      } else if (lower.includes("complaint") || lower.includes("track") || lower.includes("පැමිණිලි") || lower.includes("புகார்")) {
-        matchedAnswer = t.chatbot.mockAnswers.trackComplaint;
-      } else if (lower.includes("solar") || lower.includes("transformer") || lower.includes("සූර්ය") || lower.includes("சூரிய")) {
-        matchedAnswer = t.chatbot.mockAnswers.mySolar;
-      } else if (lower.includes("high") || lower.includes("why is my bill") || lower.includes("වැඩි වී")) {
-        matchedAnswer = t.chatbot.mockAnswers.highBill;
-      } else if (lower.includes("outage") || lower.includes("ඇනහිට")) {
-        matchedAnswer = t.chatbot.mockAnswers.outageArea;
-      } else if (lower.includes("report") || lower.includes("breakdown")) {
-        matchedAnswer = t.chatbot.mockAnswers.reportBreakdown;
-      }
-    }
-
-    setTimeout(() => {
       const assistantMsg: ChatMessage = {
         id: "ast-" + Date.now(),
         sender: "assistant",
-        content: matchedAnswer,
+        content: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         language: language,
         mode: chatMode,
-        isMockResponse: true,
-        actionRequired: actionReq,
+        isMockResponse: data.is_mock,
+        actionRequired: data.action_required as any,
+        richCard: data.rich_card,
+        sources: data.sources || [],
       };
       setMessages((prev) => [...prev, assistantMsg]);
       setIsTyping(false);
-    }, 800);
+      return;
+    } catch (err: any) {
+      console.error("Chat error from backend:", err);
+      const errorMsg: ChatMessage = {
+        id: "err-" + Date.now(),
+        sender: "assistant",
+        content: `⚠️ API Communication Error: Unable to connect to the EDL Care Assistant backend (http://127.0.0.1:8000). ${err.message || "Please ensure the FastAPI service is active."}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        language: language,
+        mode: chatMode,
+        isMockResponse: false,
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+      setIsTyping(false);
+      return;
+    }
   };
 
   const handleReset = () => {
+    sessionIdRef.current = "sess-" + Math.random().toString(36).substring(2, 9);
     const welcome = chatMode === "guest" 
       ? t.chatbot.guestWelcomeMsg 
       : t.chatbot.customerWelcomeMsg;
@@ -205,7 +181,7 @@ export const ChatbotDrawer: React.FC = () => {
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         language: language,
         mode: chatMode,
-        isMockResponse: true,
+        isMockResponse: false,
       },
     ]);
   };
@@ -250,7 +226,7 @@ export const ChatbotDrawer: React.FC = () => {
 
       {/* Slide-over Chatbot Panel */}
       {isChatOpen && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[95vw] sm:w-[440px] h-[640px] max-h-[88vh] rounded-3xl bg-white dark:bg-[#161B22] border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-slideUp">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[95vw] sm:w-[460px] h-[670px] max-h-[90vh] rounded-3xl bg-white dark:bg-[#161B22] border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-slideUp">
           
           {/* 1. Header with Brand & Mode Switcher */}
           <div className="bg-maroon-gradient text-white p-3.5 flex flex-col gap-2.5 shrink-0 shadow-md">
@@ -319,9 +295,9 @@ export const ChatbotDrawer: React.FC = () => {
             <div className="flex items-center justify-between bg-black/25 p-1 rounded-xl border border-white/15">
               <button
                 onClick={() => toggleMode("guest")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2.5 rounded-lg text-xs font-bold transition-all ${
+                className={`flex-1 py-1 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   chatMode === "guest"
-                    ? "bg-white text-[#6c002c] shadow-xs"
+                    ? "bg-white text-brand-maroon shadow-sm"
                     : "text-white/80 hover:text-white hover:bg-white/10"
                 }`}
               >
@@ -331,29 +307,29 @@ export const ChatbotDrawer: React.FC = () => {
 
               <button
                 onClick={() => toggleMode("customer")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2.5 rounded-lg text-xs font-bold transition-all ${
+                className={`flex-1 py-1 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   chatMode === "customer"
-                    ? "bg-emerald-600 text-white shadow-xs"
+                    ? "bg-brand-gold text-brand-darkMaroon shadow-sm"
                     : "text-white/80 hover:text-white hover:bg-white/10"
                 }`}
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-brand-gold" />
+                <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Customer Mode</span>
               </button>
             </div>
           </div>
 
-          {/* 2. Active Mode Context Banner */}
-          <div className={`px-3 py-1.5 text-[11px] flex items-center justify-between border-b shrink-0 transition-colors ${
-            chatMode === "customer"
-              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50 text-emerald-900 dark:text-emerald-300"
+          {/* 2. Mode Context Banner */}
+          <div className={`px-4 py-2 border-b text-xs flex items-center justify-between transition-colors ${
+            chatMode === "customer" 
+              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
               : "bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
           }`}>
             <span className="flex items-center gap-1.5 font-medium truncate">
               {chatMode === "customer" ? (
                 <>
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Authenticated: <strong>Account #0412345678</strong> (Home)</span>
+                  <span>Authenticated: <strong>Account #{account?.accountNumber || "0412345678"}</strong> ({account?.nickname || "Home"})</span>
                 </>
               ) : (
                 <>
@@ -364,7 +340,7 @@ export const ChatbotDrawer: React.FC = () => {
             </span>
             <button
               onClick={() => toggleMode(chatMode === "guest" ? "customer" : "guest")}
-              className="text-[10px] font-bold text-[#6c002c] dark:text-amber-400 hover:underline shrink-0 ml-2"
+              className="text-[10px] font-bold text-brand-maroon dark:text-brand-gold hover:underline shrink-0 ml-2"
             >
               {chatMode === "guest" ? "Switch to Customer →" : "Switch to Guest →"}
             </button>
@@ -383,14 +359,14 @@ export const ChatbotDrawer: React.FC = () => {
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                     msg.mode === "customer"
                       ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400"
-                      : "bg-red-100 dark:bg-red-950/60 text-[#6c002c] dark:text-amber-400"
+                      : "bg-red-100 dark:bg-red-950/60 text-brand-maroon dark:text-brand-gold"
                   }`}>
                     <Bot className="w-4 h-4" />
                   </div>
                 )}
 
                 <div
-                  className={`max-w-[85%] rounded-2xl p-3 shadow-xs ${
+                  className={`max-w-[88%] rounded-2xl p-3 shadow-xs ${
                     msg.sender === "user"
                       ? "bg-maroon-gradient text-white rounded-tr-none font-medium"
                       : "bg-white dark:bg-[#1A212D] text-slate-800 dark:text-slate-200 rounded-tl-none border border-slate-200/90 dark:border-slate-800"
@@ -400,26 +376,115 @@ export const ChatbotDrawer: React.FC = () => {
                     {msg.content}
                   </p>
 
-                  {/* Contextual Action Buttons in Assistant Messages */}
-                  {msg.actionRequired === "pay" && chatMode === "customer" && (
-                    <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={() => setPaymentModalOpen(true)}
-                        className="px-3 py-1.5 rounded-lg bg-[#6c002c] hover:bg-[#550022] text-white text-[11px] font-bold flex items-center gap-1.5 shadow-xs transition-colors"
-                      >
-                        <CreditCard className="w-3 h-3 text-[#F8BB15]" />
-                        <span>Pay Rs. 4,850.00</span>
-                      </button>
-                      <button
-                        onClick={() => setBillModalOpen(true)}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
-                      >
-                        <FileText className="w-3 h-3" />
-                        <span>View Bill Details</span>
-                      </button>
+                  {/* RICH UI CARD: Bill Summary */}
+                  {msg.richCard?.type === "bill" && (
+                    <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-[#141922] border border-brand-maroon/20 dark:border-brand-gold/20 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-brand-maroon dark:text-brand-gold flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>{msg.richCard.data.billing_month || "October 2026"} Bill</span>
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-500">
+                          Due: {msg.richCard.data.due_date || "2026-11-25"}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between pt-1 border-t border-slate-200 dark:border-slate-800">
+                        <span className="text-xs text-slate-600 dark:text-slate-400">Total Outstanding</span>
+                        <span className="text-base font-extrabold text-brand-maroon dark:text-white">
+                          {formatCurrency(msg.richCard.data.outstanding_balance || 4850.00)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => setPaymentModalOpen(true)}
+                          className="flex-1 py-1.5 px-3 rounded-lg bg-maroon-gradient text-white text-[11px] font-bold flex items-center justify-center gap-1.5 hover:opacity-95 shadow-xs"
+                        >
+                          <CreditCard className="w-3 h-3 text-brand-gold" />
+                          <span>Pay Now</span>
+                        </button>
+                        <button
+                          onClick={() => setBillModalOpen(true)}
+                          className="py-1.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                          Details
+                        </button>
+                      </div>
                     </div>
                   )}
 
+                  {/* RICH UI CARD: Consumption History */}
+                  {msg.richCard?.type === "consumption" && (
+                    <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-[#141922] border border-slate-200 dark:border-slate-700 space-y-2">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                        <span className="flex items-center gap-1">
+                          <Activity className="w-3.5 h-3.5 text-brand-maroon dark:text-brand-gold" />
+                          <span>Consumption Overview</span>
+                        </span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                          142 kWh (Down 11.2%)
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500">6-Month Average: 154 kWh / month</p>
+                      {msg.richCard.data.history && (
+                        <div className="flex items-end justify-between gap-1 pt-2 h-14 border-t border-slate-200 dark:border-slate-800">
+                          {msg.richCard.data.history.map((h: any, i: number) => (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                              <div 
+                                className="w-full rounded-t bg-maroon-gradient"
+                                style={{ height: `${Math.min(48, (h.kwh / 200) * 44)}px` }}
+                              />
+                              <span className="text-[9px] text-slate-400">{h.month}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* RICH UI CARD: Complaint Tracking */}
+                  {msg.richCard?.type === "complaint" && (
+                    <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-[#141922] border border-amber-300 dark:border-amber-800/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-800 dark:text-white flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                          <span>{msg.richCard.data.ticket_id}</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                          {msg.richCard.data.status}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+                        {msg.richCard.data.nature}
+                      </p>
+                      <div className="text-[10px] text-slate-500 space-y-0.5 border-t border-slate-200 dark:border-slate-800 pt-1.5">
+                        <div>Assigned: {msg.richCard.data.assigned_depot}</div>
+                        <div>ETA: {msg.richCard.data.estimated_completion}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* RICH UI CARD: Solar Capacity */}
+                  {msg.richCard?.type === "solar" && (
+                    <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-[#141922] border border-brand-gold/40 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-800 dark:text-white flex items-center gap-1">
+                          <Sun className="w-3.5 h-3.5 text-brand-gold" />
+                          <span>Transformer {msg.richCard.data.transformer_code}</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
+                          {msg.richCard.data.status}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 dark:text-slate-300">
+                        Available Absorption: <strong>{msg.richCard.data.remaining_capacity_kw} kW</strong>
+                      </div>
+                      <p className="text-[10px] text-slate-500">
+                        Total: {msg.richCard.data.total_capacity_kva} kVA | Feeder: {msg.richCard.data.feeder_name}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Action Button for Login Gate */}
                   {msg.actionRequired === "login" && chatMode === "guest" && (
                     <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
                       <button
@@ -439,8 +504,26 @@ export const ChatbotDrawer: React.FC = () => {
                     </div>
                   )}
 
+                  {/* RAG Source Citations */}
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[9px] font-semibold text-slate-400 flex items-center gap-1">
+                        <BookOpen className="w-2.5 h-2.5" />
+                        <span>RAG Sources:</span>
+                      </span>
+                      {msg.sources.map((src, i) => (
+                        <span 
+                          key={i} 
+                          className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium"
+                        >
+                          {src}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between gap-3 mt-1.5 pt-1 border-t border-black/5 dark:border-white/5 text-[9px] text-slate-400">
-                    <span className="font-semibold text-[#6c002c] dark:text-amber-400">
+                    <span className="font-semibold text-brand-maroon dark:text-brand-gold">
                       {msg.mode === "customer" ? "Customer Scoped" : "Guest Scoped"}
                     </span>
                     <span>{msg.timestamp}</span>
@@ -458,13 +541,13 @@ export const ChatbotDrawer: React.FC = () => {
             {/* Typing Animation */}
             {isTyping && (
               <div className="flex gap-2.5 items-center text-xs text-slate-500 dark:text-slate-400">
-                <div className="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-950/60 text-[#6c002c] flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-950/60 text-brand-maroon flex items-center justify-center shrink-0">
                   <Bot className="w-4 h-4" />
                 </div>
                 <div className="bg-white dark:bg-[#1A212D] px-3.5 py-2.5 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-800 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#6c002c] animate-bounce [animation-delay:-0.3s]" />
-                  <span className="w-2 h-2 rounded-full bg-[#6c002c] animate-bounce [animation-delay:-0.15s]" />
-                  <span className="w-2 h-2 rounded-full bg-[#6c002c] animate-bounce" />
+                  <span className="w-2 h-2 rounded-full bg-brand-maroon animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-2 h-2 rounded-full bg-brand-maroon animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-2 h-2 rounded-full bg-brand-maroon animate-bounce" />
                 </div>
               </div>
             )}
@@ -476,7 +559,7 @@ export const ChatbotDrawer: React.FC = () => {
           <div className="px-3 pt-2.5 pb-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-[#161B22] shrink-0">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-[#F8BB15]" />
+                <Sparkles className="w-3 h-3 text-brand-gold" />
                 <span>{chatMode === "guest" ? "Guest Questions" : "Customer Questions"}</span>
               </span>
               <span className="text-[10px] text-slate-400">
@@ -492,7 +575,7 @@ export const ChatbotDrawer: React.FC = () => {
                   className={`shrink-0 text-[11px] px-3 py-1.5 rounded-xl border transition-all shadow-xs ${
                     q.key === "guestBillCheck"
                       ? "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-bold"
-                      : "bg-slate-50 dark:bg-[#1A212D] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-[#6c002c] hover:text-[#6c002c] dark:hover:border-amber-400 dark:hover:text-amber-400"
+                      : "bg-slate-50 dark:bg-[#1A212D] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-brand-maroon hover:text-brand-maroon dark:hover:border-brand-gold dark:hover:text-brand-gold"
                   }`}
                 >
                   {q.text}
@@ -517,13 +600,13 @@ export const ChatbotDrawer: React.FC = () => {
                 ? "Ask guest questions (e.g. tariffs, safety, outages)..."
                 : "Ask customer questions (e.g. my bill, complaints, usage)..."
               }
-              className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1A212D] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6c002c]"
+              className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1A212D] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-maroon"
             />
             <button
               type="submit"
               disabled={!inputValue.trim() || isTyping}
-              className="p-2.5 rounded-xl bg-maroon-gradient text-white hover:opacity-95 disabled:opacity-40 transition-opacity shadow-xs"
-              title={t.chatbot.send}
+              className="p-2 rounded-xl bg-maroon-gradient text-white hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shrink-0"
+              title="Send message"
             >
               <Send className="w-4 h-4 text-brand-gold" />
             </button>
@@ -531,102 +614,92 @@ export const ChatbotDrawer: React.FC = () => {
         </div>
       )}
 
-      {/* 6. Feature Matrix Popover / Modal (Option C Official Spec) */}
+      {/* 6. Option C Feature Comparison Matrix Modal */}
       {showMatrixModal && (
-        <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-[#161B22] rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#6c002c]/10 text-[#6c002c] dark:bg-amber-400/10 dark:text-amber-400 flex items-center justify-center">
-                  <ShieldCheck className="w-5 h-5" />
+        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white dark:bg-[#161B22] w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-950/60 text-brand-maroon flex items-center justify-center">
+                  <Table className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                    Option C: Dual Access Architecture
-                  </h4>
-                  <p className="text-xs text-slate-500">
-                    Guest Mode vs Logged-In Customer Permission Scope
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                    {t.chatbot.viewFeatureMatrix || "Option C Feature Comparison Matrix"}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Option C Architecture — Strict Access Boundary Separation
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowMatrixModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Comparison Table */}
-            <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                  <tr>
-                    <th className="py-2.5 px-3 font-bold">Feature</th>
-                    <th className="py-2.5 px-3 font-bold text-center">Guest</th>
-                    <th className="py-2.5 px-3 font-bold text-center">Logged In</th>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 text-[10px] uppercase font-bold">
+                    <th className="py-2 px-2">Service Feature</th>
+                    <th className="py-2 px-2 text-center">Guest Mode</th>
+                    <th className="py-2 px-2 text-center">Customer Mode</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-[11px]">
                   <tr>
-                    <td className="py-2 px-3 font-medium">General electricity FAQs</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 px-3 font-medium">Tariff explanations</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
+                    <td className="py-2 px-2 font-medium">General Electricity FAQs</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Yes</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Yes</td>
                   </tr>
                   <tr>
-                    <td className="py-2 px-3 font-medium">Electrical safety guidance</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
+                    <td className="py-2 px-2 font-medium">Tariff Explanations</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Yes</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Yes</td>
                   </tr>
                   <tr>
-                    <td className="py-2 px-3 font-medium">General outage guidance</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
+                    <td className="py-2 px-2 font-medium">Electrical Safety Guidance</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Yes</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Yes</td>
                   </tr>
-                  <tr className="bg-amber-50/50 dark:bg-amber-950/20">
-                    <td className="py-2 px-3 font-medium">Personal bill details</td>
-                    <td className="py-2 px-3 text-center text-slate-400 font-mono text-[11px]">🔒 Login req.</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
+                  <tr>
+                    <td className="py-2 px-2 font-medium">General Outage Guidance</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Yes</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Yes</td>
                   </tr>
-                  <tr className="bg-amber-50/50 dark:bg-amber-950/20">
-                    <td className="py-2 px-3 font-medium">Personal consumption history</td>
-                    <td className="py-2 px-3 text-center text-slate-400 font-mono text-[11px]">🔒 Login req.</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
+                  <tr className="bg-red-50/50 dark:bg-red-950/20">
+                    <td className="py-2 px-2 font-medium text-brand-maroon dark:text-red-300">Personal Bill Details</td>
+                    <td className="py-2 px-2 text-center text-red-600 dark:text-red-400 font-semibold">🔒 Login Req.</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Full Access</td>
                   </tr>
-                  <tr className="bg-amber-50/50 dark:bg-amber-950/20">
-                    <td className="py-2 px-3 font-medium">Personal complaint tracking</td>
-                    <td className="py-2 px-3 text-center text-slate-400 font-mono text-[11px]">🔒 Login req.</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
+                  <tr className="bg-red-50/50 dark:bg-red-950/20">
+                    <td className="py-2 px-2 font-medium text-brand-maroon dark:text-red-300">Consumption History</td>
+                    <td className="py-2 px-2 text-center text-red-600 dark:text-red-400 font-semibold">🔒 Login Req.</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Full Access</td>
                   </tr>
-                  <tr className="bg-amber-50/50 dark:bg-amber-950/20">
-                    <td className="py-2 px-3 font-medium">Personalized account assistance</td>
-                    <td className="py-2 px-3 text-center text-slate-400 font-mono text-[11px]">🔒 Login req.</td>
-                    <td className="py-2 px-3 text-center text-emerald-600 font-bold">✅</td>
+                  <tr className="bg-red-50/50 dark:bg-red-950/20">
+                    <td className="py-2 px-2 font-medium text-brand-maroon dark:text-red-300">Complaint Tracking</td>
+                    <td className="py-2 px-2 text-center text-red-600 dark:text-red-400 font-semibold">🔒 Login Req.</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Full Access</td>
+                  </tr>
+                  <tr className="bg-red-50/50 dark:bg-red-950/20">
+                    <td className="py-2 px-2 font-medium text-brand-maroon dark:text-red-300">Personalized Assistance</td>
+                    <td className="py-2 px-2 text-center text-red-600 dark:text-red-400 font-semibold">🔒 Login Req.</td>
+                    <td className="py-2 px-2 text-center text-emerald-600 font-bold">✅ Full Access</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 space-y-1">
-              <span className="font-bold text-slate-800 dark:text-slate-200 block">
-                Backend Permission Boundary:
-              </span>
-              <p>
-                The shared Python FastAPI + Google Gemini backend enforces strict session scope separation. Guest queries retrieve only public domain RAG vectors. Authenticated sessions inject customer-specific mock records into the Gemini reasoning context.
-              </p>
-            </div>
-
-            <div className="flex justify-end pt-2">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => setShowMatrixModal(false)}
-                className="px-5 py-2 rounded-xl bg-[#6c002c] text-white text-xs font-bold hover:bg-[#550022] transition-colors"
+                className="px-4 py-2 rounded-xl bg-brand-maroon text-white text-xs font-bold hover:bg-brand-darkMaroon"
               >
-                Close Matrix
+                Close Comparison
               </button>
             </div>
           </div>

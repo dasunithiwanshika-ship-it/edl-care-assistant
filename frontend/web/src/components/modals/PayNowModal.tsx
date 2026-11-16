@@ -29,18 +29,22 @@ export const PayNowModal: React.FC = () => {
 
   if (!paymentModalOpen) return null;
 
-  const handlePay = (e: React.FormEvent) => {
+  const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    setTimeout(() => {
-      payBill(parseFloat(customAmount) || account.outstandingBalance);
+    try {
+      const amount = parseFloat(customAmount) || account.outstandingBalance;
+      await payBill(amount);
       setIsProcessing(false);
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
         setPaymentModalOpen(false);
-      }, 2000);
-    }, 1200);
+      }, 1500);
+    } catch (err) {
+      console.error("Payment error:", err);
+      setIsProcessing(false);
+    }
   };
 
   return (

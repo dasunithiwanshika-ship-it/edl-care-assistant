@@ -33,7 +33,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     setLanguage, 
     theme, 
     toggleTheme, 
-    notificationCount 
+    notificationCount,
+    logout,
+    account,
+    isLoggedIn 
   } = useApp();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -265,10 +268,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                     </div>
                     <div className="overflow-hidden">
                       <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                        Dasuni Thiwanshika Prem...
+                        {isLoggedIn ? account.customerName : "Guest User"}
                       </p>
                       <p className="text-xs text-slate-400 dark:text-slate-400 truncate">
-                        dasunithiwanshika@gmail.com
+                        {isLoggedIn ? `Account #${account.accountNumber}` : "Public Demo Mode"}
                       </p>
                     </div>
                   </div>
@@ -276,12 +279,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                   <div className="border-t border-slate-100 dark:border-slate-800/80 py-1">
                     {/* My Profile */}
                     <Link
-                      href="#profile"
+                      href={isLoggedIn ? "#profile" : "/login"}
                       onClick={() => setShowProfileMenu(false)}
                       className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
                     >
                       <User className="w-4 h-4 text-slate-500" />
-                      <span>My Profile</span>
+                      <span>{isLoggedIn ? "My Profile" : "Sign In"}</span>
                     </Link>
 
                     {/* Dark Mode Switcher Row with Toggle Switch matching Screenshot 3 */}
@@ -308,16 +311,31 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                     </div>
                   </div>
 
-                  {/* Logout Row in red matching Screenshot 3 */}
+                  {/* Logout Row */}
                   <div className="border-t border-slate-100 dark:border-slate-800/80 p-1">
-                    <Link
-                      href="/login"
-                      onClick={() => setShowProfileMenu(false)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
-                    >
-                      <LogOut className="w-4 h-4 text-red-600" />
-                      <span>Logout</span>
-                    </Link>
+                    {isLoggedIn ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          logout();
+                          setShowProfileMenu(false);
+                          router.push("/login");
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors text-left"
+                      >
+                        <LogOut className="w-4 h-4 text-red-600" />
+                        <span>Logout</span>
+                      </button>
+                    ) : (
+                      <Link
+                        href="/login"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-[#6c002c] hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-xl transition-colors"
+                      >
+                        <User className="w-4 h-4 text-[#6c002c]" />
+                        <span>Customer Sign In</span>
+                      </Link>
+                    )}
                   </div>
                 </div>
               )}

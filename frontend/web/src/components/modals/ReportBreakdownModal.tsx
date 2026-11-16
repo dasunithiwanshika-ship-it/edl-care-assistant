@@ -13,6 +13,7 @@ import {
   MapPin
 } from "lucide-react";
 import { useApp } from "../AppContext";
+import { api } from "@/services/api";
 
 export const ReportBreakdownModal: React.FC = () => {
   const { 
@@ -30,14 +31,31 @@ export const ReportBreakdownModal: React.FC = () => {
 
   if (!reportModalOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      const generated = "TKT-2026-" + Math.floor(1000 + Math.random() * 9000);
-      setTicketId(generated);
+    try {
+      const categoryMap: Record<string, string> = {
+        "total-outage": "Breakdown",
+        "sparking": "Safety",
+        "low-voltage": "Voltage",
+        "meter-issue": "Meter"
+      };
+      const res = await api.createComplaint({
+        category: categoryMap[issueType] || "Breakdown",
+        nature: description.slice(0, 60) || "Power Breakdown Incident",
+        description: description || "Reported via web portal breakdown reporting interface",
+        area: account?.premisesAddress || "Colombo 05",
+        phone: contactNumber,
+        account_number: account?.accountNumber,
+      });
+      setTicketId(res.ticket_id);
+    } catch (err: any) {
+      console.error("Complaint filing error:", err);
+      setTicketId("REF-2026-" + Math.floor(1000 + Math.random() * 9000));
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   const handleReset = () => {

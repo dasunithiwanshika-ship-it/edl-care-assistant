@@ -1,0 +1,18 @@
+export const Colors = {
+  primaryMaroon: "#7A1428",
+  darkMaroon: "#5C0D1D",
+  lightMaroon: "#9E1B34",
+  gold: "#F5C518",
+  goldDark: "#D4A30A",
+  backgroundLight: "#F5F6F8",
+  cardLight: "#FFFFFF",
+  textPrimary: "#1A1D20",
+  textSecondary: "#687078",
+  borderLight: "#E5E7EB",
+  success: "#10B981",
+  warning: "#F59E0B",
+  danger: "#EF4444",
+  backgroundDark: "#111315",
+  cardDark: "#1C1F22",
+  textDark: "#F3F4F6",
+};

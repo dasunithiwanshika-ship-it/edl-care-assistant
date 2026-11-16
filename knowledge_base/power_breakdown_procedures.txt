@@ -1,0 +1,40 @@
+# ELECTRICITY DISTRIBUTION LANKA (EDL)
+## POWER BREAKDOWN PROCEDURES & GRID OUTAGE RESTORATION
+Source: EDL System Operations, Grid Management & Customer Service Directorate
+Document ID: EDL-OPS-OUT-2026
+Category: Outage Management & Breakdown Reporting
+
+### 1. Classification of Power Disruptions
+EDL classifies electricity disruptions into two distinct categories:
+
+1. Planned Maintenance Interruptions:
+   - Necessary for preventive maintenance, transformer oil servicing, insulator cleaning, pole replacements, and network reconductoring.
+   - Advance Notice: Published on the EDL Care Web Portal and mobile app at least 48 hours prior to commencement.
+   - SMS Alerts: Dispatched directly to registered mobile phone numbers in affected feeder zones.
+
+2. Unscheduled Emergency Breakdowns:
+   - Caused by unexpected weather events (lightning strikes, heavy monsoon windstorms), fallen tree branches, vehicle collisions with distribution poles, equipment overload, or transformer dielectric failures.
+   - Technical breakdown repair crews operate 24 hours a day, 7 days a week, 365 days a year across all provincial depots.
+
+### 2. How to Report a Breakdown Incident
+Customers who experience a blackout, localized service drop failure, or electrical hazard can log a report through three official channels:
+1. Online Web Dashboard: Submit a ticket via the "Report Breakdown" modal on the EDL Care Web Portal.
+2. Mobile App: Instant GPS-tagged breakdown reporting with camera photo attachment of faulty wires or meter damage.
+3. 24/7 Toll-Free Hotline: Dial 1987 from any mobile or landline network in Sri Lanka.
+
+### 3. What Information to Provide When Reporting
+- 10-digit Customer Electricity Account Number.
+- Caller Contact Telephone Number.
+- Exact Location / Landmark (House Number, Street Name, Nearest Substation).
+- Nature of Breakdown:
+  - Single Premises Blackout (Neighboring premises have electricity).
+  - Street / Feeder Blackout (Entire neighborhood is dark).
+  - Danger Incident: Service wire severed, tree branch on high-tension wire, pole leaning, or transformer smoke/sparking.
+
+### 4. Ticket Lifecycle & Progress Tracking
+Upon submission, an automated tracking reference ticket is generated (e.g. #REF-2026-9841).
+- PENDING: Ticket registered and queued in the dispatch queue.
+- ASSIGNED: Ticket assigned to the nearest Area Engineer Depot and active repair crew dispatched in a utility maintenance vehicle.
+- IN_PROGRESS: Technical crew on site conducting line isolation and cable repairs.
+- RESOLVED: Power supply energized and verified with local telemetry.
+- CLOSED: Incident confirmed restored with customer via SMS confirmation.

@@ -1,0 +1,43 @@
+# ELECTRICITY DISTRIBUTION LANKA (EDL)
+## OFFICIAL DOMESTIC ELECTRICITY TARIFF SCHEDULE (2026)
+Source: Public Utilities Commission of Sri Lanka (PUCSL) Statutory Gazette & EDL Tariff Division
+Document ID: EDL-TRF-DOM-2026-V1
+Category: Tariffs & Billing Rates
+
+### 1. General Domestic Tariff Structure (Customer Category D-1)
+Domestic electricity supply in Sri Lanka is billed on a progressive cumulative monthly block system. Higher consumption brackets incur higher unit rates to incentivize energy conservation and subsidize low-income lifeline consumers.
+
+### 2. Standard Monthly Consumption Blocks
+Consumption is measured in kilowatt-hours (kWh), commonly referred to as "units".
+
+* Block 1 (0 – 30 Units):
+  - Energy Charge: Rs. 8.00 per unit (kWh)
+  - Fixed Monthly Service Charge: Rs. 150.00
+  - Target: Low-usage lifeline households and essential lighting.
+
+* Block 2 (31 – 60 Units):
+  - Energy Charge: Rs. 15.00 per unit (kWh)
+  - Fixed Monthly Service Charge: Rs. 300.00
+  - Target: Basic household appliances and fans.
+
+* Block 3 (61 – 90 Units):
+  - Energy Charge: Rs. 25.00 per unit (kWh)
+  - Fixed Monthly Service Charge: Rs. 400.00
+  - Target: Standard domestic refrigeration, televisions, and basic electronic equipment.
+
+* Block 4 (91 – 120 Units):
+  - Energy Charge: Rs. 35.00 per unit (kWh)
+  - Fixed Monthly Service Charge: Rs. 1,000.00
+  - Target: Mid-to-high consumption households with washing machines and water pumps.
+
+* Block 5 (Above 120 Units):
+  - Energy Charge: Rs. 50.00 per unit (kWh)
+  - Fixed Monthly Service Charge: Rs. 1,500.00
+  - Target: High-usage domestic customers with air-conditioning, heavy induction cooking, or domestic EV charging.
+
+### 3. Government Lifeline Subsidies
+Households consuming 60 units or fewer in a billing cycle receive statutory government tariff cross-subsidies. Once consumption exceeds 60 units, standard block charges apply across all consumed units.
+
+### 4. Statutory Surcharges & Taxes
+* Fuel Adjustment Surcharge (FAS): Evaluated periodically to reflect generation fuel price fluctuations, applied as an approved percentage on total energy charges when gazetted.
+* Value Added Tax (VAT) / Social Security Contribution Levy (SSCL): Assessed on industrial, commercial, and designated high-consumption brackets as per government fiscal legislation.
