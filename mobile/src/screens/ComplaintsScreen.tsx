@@ -66,8 +66,11 @@ export const ComplaintsScreen: React.FC<ComplaintsProps> = ({
         "Complaint Registered",
         `Ticket #${res.reference_number} dispatched to the nearest Area Engineer Depot.`
       );
-    } catch {
-      Alert.alert("Submission Notice", "Incident recorded in local demonstration mode.");
+    } catch (err: any) {
+      Alert.alert(
+        "Submission Failed",
+        err.message || "Failed to register breakdown report. Please check server connectivity."
+      );
     } finally {
       setSubmitting(false);
     }

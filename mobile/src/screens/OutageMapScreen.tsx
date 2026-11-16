@@ -23,11 +23,17 @@ export const OutageMapScreen: React.FC<OutageMapProps> = ({ onNavigate }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getOutagesApi().then((data) => {
-      setOutages(data);
-      if (data.length > 0) setSelectedOutage(data[0]);
-      setLoading(false);
-    });
+    getOutagesApi()
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setOutages(data);
+          if (data.length > 0) setSelectedOutage(data[0]);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
   }, []);
 
   const filtered = outages.filter((o) => {
@@ -99,6 +105,15 @@ export const OutageMapScreen: React.FC<OutageMapProps> = ({ onNavigate }) => {
 
       {/* Outage Incident List */}
       <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
+        {filtered.length === 0 && !loading && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>⚡</Text>
+            <Text style={styles.emptyTitle}>No Outages Reported</Text>
+            <Text style={styles.emptyDesc}>
+              No power breakdowns or scheduled maintenance match your selected filter.
+            </Text>
+          </View>
+        )}
         {filtered.map((item) => (
           <TouchableOpacity
             key={item.id}
@@ -339,5 +354,26 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "bold",
     color: Colors.success,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 36,
+    paddingHorizontal: 20,
+  },
+  emptyIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  emptyTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+  emptyDesc: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginTop: 4,
   },
 });

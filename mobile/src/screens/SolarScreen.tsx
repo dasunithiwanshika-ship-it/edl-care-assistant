@@ -25,24 +25,36 @@ export const SolarScreen: React.FC<SolarScreenProps> = ({ onNavigate, accountNum
 
   React.useEffect(() => {
     // Initial fetch of transformer list and default capacity
-    getSolarTransformersApi().then((list) => {
-      if (Array.isArray(list) && list.length > 0) {
-        setTransformers(list);
-      }
-    });
+    getSolarTransformersApi()
+      .then((list) => {
+        if (Array.isArray(list) && list.length > 0) {
+          setTransformers(list);
+        }
+      })
+      .catch(() => {});
+
     setLoading(true);
-    getSolarCapacityApi(code, accountNumber).then((data) => {
-      setCapacity(data);
-      setLoading(false);
-    });
+    getSolarCapacityApi(code, accountNumber)
+      .then((data) => {
+        setCapacity(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
   }, []);
 
   const handleSearch = () => {
     setLoading(true);
-    getSolarCapacityApi(code, accountNumber).then((data) => {
-      setCapacity(data);
-      setLoading(false);
-    });
+    getSolarCapacityApi(code, accountNumber)
+      .then((data) => {
+        setCapacity(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setLoading(false);
+        Alert.alert("Solar Query Failed", err.message || "Failed to check transformer capacity.");
+      });
   };
 
   return (

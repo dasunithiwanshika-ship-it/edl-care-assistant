@@ -26,14 +26,26 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
 }) => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [payModalVisible, setPayModalVisible] = useState(false);
   const [paid, setPaid] = useState(false);
 
+  const fetchProfile = () => {
+    setLoading(true);
+    setError(null);
+    getCustomerProfileApi(token)
+      .then((data) => {
+        setProfile(data);
+        setLoading(false);
+      })
+      .catch((err: any) => {
+        setError(err.message || "Failed to load customer profile");
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
-    getCustomerProfileApi(token).then((data) => {
-      setProfile(data);
-      setLoading(false);
-    });
+    fetchProfile();
   }, [token]);
 
   const handlePayNow = async () => {
@@ -49,12 +61,12 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
       if (profile) {
         setProfile({ ...profile, outstanding_balance: res.new_balance });
       }
-    } catch {
+    } catch (err: any) {
       setPayModalVisible(false);
-      Alert.alert("Payment Success", "Demonstration payment of Rs. 4,850.00 confirmed via LankaQR.");
-      if (profile) {
-        setProfile({ ...profile, outstanding_balance: 0.0 });
-      }
+      Alert.alert(
+        "Payment Failed",
+        err.message || "Payment request failed. Please check server connectivity."
+      );
     } finally {
       setPaid(false);
     }

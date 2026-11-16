@@ -21,10 +21,14 @@ export const ConsumptionScreen: React.FC<ConsumptionProps> = ({ onNavigate, toke
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getConsumptionApi(token).then((data) => {
-      setRecords(data);
-      setLoading(false);
-    });
+    getConsumptionApi(token)
+      .then((data) => {
+        if (Array.isArray(data)) setRecords(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
   }, [token]);
 
   const maxKwh = Math.max(...records.map(r => r.units_kwh), 200);

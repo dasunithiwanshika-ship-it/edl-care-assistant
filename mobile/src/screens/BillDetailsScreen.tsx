@@ -25,15 +25,27 @@ export const BillDetailsScreen: React.FC<BillDetailsProps> = ({
   const [bills, setBills] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
 
+  const fetchBills = () => {
+    setLoading(true);
+    setError(null);
+    getBillsApi(token)
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBills(data);
+        }
+        setLoading(false);
+      })
+      .catch((err: any) => {
+        setError(err.message || "Failed to load billing history");
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
-    getBillsApi(token).then((data) => {
-      if (Array.isArray(data) && data.length > 0) {
-        setBills(data);
-      }
-      setLoading(false);
-    });
+    fetchBills();
   }, [token]);
 
   const bill = bills[selectedIndex] || {
@@ -52,7 +64,7 @@ export const BillDetailsScreen: React.FC<BillDetailsProps> = ({
   const handlePay = async () => {
     setPaying(true);
     try {
-      const res = await payBillApi(bill.total_amount, token, "LankaQR");
+      const res = await payBillApi(bill.total_amount, token, "LankaQR", accountNumber);
       Alert.alert(
         "Payment Confirmed",
         `Receipt: ${res.transaction_id}\nAmount: Rs. ${Number(res.amount_paid).toFixed(2)}\nBill marked as PAID.`
@@ -61,8 +73,8 @@ export const BillDetailsScreen: React.FC<BillDetailsProps> = ({
       setBills((prev) =>
         prev.map((b, idx) => (idx === selectedIndex ? { ...b, is_paid: true } : b))
       );
-    } catch {
-      Alert.alert("Payment Success", "Demonstration bill payment recorded.");
+    } catch (err: any) {
+      Alert.alert("Payment Failed", err.message || "Demonstration bill payment could not be processed.");
     } finally {
       setPaying(false);
     }

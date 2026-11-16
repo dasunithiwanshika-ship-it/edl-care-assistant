@@ -103,11 +103,11 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
       };
 
       setMessages((prev) => [...prev, botMsg]);
-    } catch {
+    } catch (err: any) {
       const botMsg = {
         id: "ast-" + Date.now(),
         sender: "assistant",
-        text: "⚠️ Connection interrupted. Please ensure the FastAPI backend is running.",
+        text: `⚠️ Communication error: ${err.message || "Unable to reach EDL Care backend."} Please check that the server is running on 0.0.0.0:8000.`,
         mode
       };
       setMessages((prev) => [...prev, botMsg]);
