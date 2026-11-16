@@ -126,7 +126,12 @@ class ChatbotEngine:
 
             # 4. Check Action Requirements & Rich Card Triggers
             if mode == ChatMode.guest:
-                if any(term in lower_msg for term in ["my bill", "outstanding", "balance", "මගේ බිල", "ශේෂය", "நிலுவை"]):
+                is_personal = (
+                    any(term in lower_msg for term in ["my bill", "outstanding", "balance", "මගේ බිල", "ශේෂය", "நிலுவை"]) or
+                    ("bill" in lower_msg and any(w in lower_msg for w in ["my", "personal", "due", "account", "owing"])) or
+                    ("account" in lower_msg and any(w in lower_msg for w in ["my", "balance", "status", "detail"]))
+                )
+                if is_personal:
                     action_required = "login"
             else:
                 # Customer Mode Rich Card Detection
