@@ -165,7 +165,7 @@ async function runTests() {
     assert(
       res.ok && Array.isArray(data) && data.length > 0,
       "8. Billing History Retrieval",
-      `Cycles retrieved: ${data.length}`
+      res.ok ? `Cycles retrieved: ${data.length}` : `HTTP ${res.status}: ${JSON.stringify(data)}`
     );
   } catch (err) {
     assert(false, "8. Billing History Retrieval", err.message);
@@ -205,7 +205,7 @@ async function runTests() {
     assert(
       res.ok && data.transaction_id && typeof remainingBal === "number",
       "10. Bill Payment Processing",
-      `Tx ID: ${data.transaction_id}, Remaining Balance: Rs. ${remainingBal}`
+      res.ok ? `Tx ID: ${data.transaction_id}, Remaining Balance: Rs. ${remainingBal}` : `HTTP ${res.status}: ${JSON.stringify(data)}`
     );
   } catch (err) {
     assert(false, "10. Bill Payment Processing", err.message);
@@ -292,6 +292,212 @@ async function runTests() {
     );
   } catch (err) {
     assert(false, "15. Solar Distribution Transformers Catalog", err.message);
+  }
+
+  // 16. Chatbot Guest Public Inquiry (Energy Saving & Solar)
+  try {
+    const res = await fetch(`${BASE_URL}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "How can I save electricity to lower my monthly bills?",
+        mode: "guest",
+        language: "en"
+      })
+    });
+    const data = await res.json();
+    assert(
+      res.ok && data.mode === "guest" && !data.action_required && data.reply.length > 20,
+      "16. Chatbot Guest Public Inquiry (Energy Saving)",
+      `Action: ${data.action_required || "none (direct answer)"}, Sources: ${data.sources ? data.sources.length : 0}`
+    );
+  } catch (err) {
+    assert(false, "16. Chatbot Guest Public Inquiry (Energy Saving)", err.message);
+  }
+
+  // 17. Chatbot Guest Personal Consumption Query Gated to Login
+  try {
+    const res = await fetch(`${BASE_URL}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "What is my consumption history for the past 6 months?",
+        mode: "guest",
+        language: "en"
+      })
+    });
+    const data = await res.json();
+    assert(
+      res.ok && data.action_required === "login",
+      "17. Chatbot Guest Personal Consumption History Gate",
+      `action_required: ${data.action_required}`
+    );
+  } catch (err) {
+    assert(false, "17. Chatbot Guest Personal Consumption History Gate", err.message);
+  }
+
+  // 18. Chatbot Unauthenticated Mode Forgery Protection
+  try {
+    const res = await fetch(`${BASE_URL}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "Check my outstanding balance",
+        mode: "customer",
+        language: "en"
+      })
+    });
+    const data = await res.json();
+    assert(
+      res.ok && data.mode === "guest" && data.action_required === "login" && !data.rich_card,
+      "18. Chatbot Unauthenticated Mode Forgery Protection",
+      `Resolved mode: ${data.mode}, action_required: ${data.action_required}`
+    );
+  } catch (err) {
+    assert(false, "18. Chatbot Unauthenticated Mode Forgery Protection", err.message);
+  }
+
+  // ====================================================
+  // MOBILE AUTHENTICATION & REGISTRATION TEST SUITE
+  // ====================================================
+  const mobileTestEmail = `mobile_user_${Date.now()}@edl.lk`;
+  let registeredMobileToken = null;
+  let registeredMobileAccount = null;
+
+  // 19. New Mobile Account Registration
+  try {
+    const res = await fetch(`${BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        full_name: "Sanduni Jayawardena",
+        email: mobileTestEmail,
+        phone: "0773456789",
+        password: "MobileSecurePass123"
+      })
+    });
+    const data = await res.json();
+    registeredMobileToken = data.access_token;
+    registeredMobileAccount = data.account_number;
+    assert(
+      res.ok && data.access_token && data.account_number && data.account_number.startsWith("04"),
+      "19. New Mobile Account Registration",
+      `Account: #${data.account_number}, Name: ${data.full_name}`
+    );
+  } catch (err) {
+    assert(false, "19. New Mobile Account Registration", err.message);
+  }
+
+  // 20. Mobile Registration Duplicate Email Handling
+  try {
+    const res = await fetch(`${BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        full_name: "Sanduni Duplicate",
+        email: mobileTestEmail,
+        phone: "0770000000",
+        password: "AnotherPassword123"
+      })
+    });
+    const data = await res.json();
+    assert(
+      res.status === 400 && String(data.detail).toLowerCase().includes("already exists"),
+      "20. Duplicate Email Registration Rejection",
+      `HTTP Status: ${res.status}, Detail: "${data.detail}"`
+    );
+  } catch (err) {
+    assert(false, "20. Duplicate Email Registration Rejection", err.message);
+  }
+
+  // 21. Mobile Login with Newly Registered Email
+  try {
+    const res = await fetch(`${BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: mobileTestEmail,
+        password: "MobileSecurePass123"
+      })
+    });
+    const data = await res.json();
+    assert(
+      res.ok && data.access_token && data.full_name === "Sanduni Jayawardena",
+      "21. Login with Newly Registered Account (Email & Password)",
+      `Logged in as: ${data.full_name}, Account: #${data.account_number}`
+    );
+  } catch (err) {
+    assert(false, "21. Login with Newly Registered Account (Email & Password)", err.message);
+  }
+
+  // 22. Mobile Login with Invalid Credentials
+  try {
+    const res = await fetch(`${BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: mobileTestEmail,
+        password: "WrongPassword999"
+      })
+    });
+    assert(
+      res.status === 401,
+      "22. Mobile Login Invalid Credentials Rejection",
+      `HTTP Status: ${res.status} (Expected 401 Unauthorized)`
+    );
+  } catch (err) {
+    assert(false, "22. Mobile Login Invalid Credentials Rejection", err.message);
+  }
+
+  // 23. Registered Customer Protected Data Access
+  try {
+    const res = await fetch(`${BASE_URL}/customers/me`, {
+      headers: { Authorization: `Bearer ${registeredMobileToken}` }
+    });
+    const data = await res.json();
+    assert(
+      res.ok && data.account_number === registeredMobileAccount && data.email === mobileTestEmail,
+      "23. Registered Customer Protected Profile Access",
+      `Premises: ${data.premises_address}, Tariff: ${data.tariff_category}`
+    );
+  } catch (err) {
+    assert(false, "23. Registered Customer Protected Profile Access", err.message);
+  }
+
+  // 24. Registered Customer Starter Bills & Usage Access
+  try {
+    const billsRes = await fetch(`${BASE_URL}/customers/me/bills`, {
+      headers: { Authorization: `Bearer ${registeredMobileToken}` }
+    });
+    const billsData = await billsRes.json();
+    const consRes = await fetch(`${BASE_URL}/customers/me/consumption`, {
+      headers: { Authorization: `Bearer ${registeredMobileToken}` }
+    });
+    const consData = await consRes.json();
+    assert(
+      billsRes.ok && Array.isArray(billsData) && billsData.length >= 1 &&
+      consRes.ok && Array.isArray(consData) && consData.length === 6,
+      "24. Customer Personalized Billing & Consumption Data Isolation",
+      `Bills: ${billsData.length}, Consumption Records: ${consData.length}`
+    );
+  } catch (err) {
+    assert(false, "24. Customer Personalized Billing & Consumption Data Isolation", err.message);
+  }
+
+  // 25. Session Logout & Token Revocation
+  try {
+    const res = await fetch(`${BASE_URL}/auth/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${registeredMobileToken}` }
+    });
+    const data = await res.json();
+    assert(
+      res.ok && data.status === "SUCCESS",
+      "25. Session Logout & Token Revocation",
+      `Revoked: ${data.revoked}, Message: "${data.message}"`
+    );
+  } catch (err) {
+    assert(false, "25. Session Logout & Token Revocation", err.message);
   }
 
   console.log(`\n------------------------------------------------------`);

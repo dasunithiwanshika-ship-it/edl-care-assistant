@@ -13,6 +13,7 @@ import {
   Globe, 
   Menu, 
   User, 
+  UserPlus,
   ChevronRight,
   LogOut,
   Sparkles,
@@ -327,14 +328,24 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                         <span>Logout</span>
                       </button>
                     ) : (
-                      <Link
-                        href="/login"
-                        onClick={() => setShowProfileMenu(false)}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-[#6c002c] hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-xl transition-colors"
-                      >
-                        <User className="w-4 h-4 text-[#6c002c]" />
-                        <span>Customer Sign In</span>
-                      </Link>
+                      <div className="space-y-1">
+                        <Link
+                          href="/login"
+                          onClick={() => setShowProfileMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-xs font-bold text-[#6c002c] dark:text-[#f87171] hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-xl transition-colors"
+                        >
+                          <User className="w-4 h-4 text-[#6c002c] dark:text-[#f87171]" />
+                          <span>Customer Sign In</span>
+                        </Link>
+                        <Link
+                          href="/register"
+                          onClick={() => setShowProfileMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-xl transition-colors"
+                        >
+                          <UserPlus className="w-4 h-4 text-slate-500" />
+                          <span>Create Account</span>
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </div>

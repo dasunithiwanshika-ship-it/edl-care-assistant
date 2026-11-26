@@ -1,8 +1,8 @@
-# ELECTRICITY DISTRIBUTION LANKA (EDL)
-## COMPREHENSIVE GUIDE TO UNDERSTANDING YOUR ELECTRICITY BILL
-Source: EDL Customer Billing Services Division & PUCSL Consumer Guide
-Document ID: EDL-BILL-GUIDE-2026
-Category: Customer Billing & Payments
+# ELECTRICITY DISTRIBUTION LANKA (EDL) - PROTOTYPE KNOWLEDGE BASE
+[CURATED DEMONSTRATION DOCUMENT – NOT AN OFFICIAL UTILITY PUBLICATION]
+PROVENANCE NOTICE: This document contains a curated demonstration explanation of electricity bills modeled on Sri Lankan utility billing concepts for educational and software demonstration purposes only.
+Document ID: EDL-BILL-GUIDE-2026-DEMO
+Category: Customer Billing & Payments (Demonstration Reference)
 
 ### 1. Structure of an EDL Domestic Electricity Statement
 Every monthly electricity bill issued by Electricity Distribution Lanka comprises specific itemized accounting components:

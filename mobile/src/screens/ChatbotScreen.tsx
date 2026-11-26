@@ -10,62 +10,165 @@ import {
   KeyboardAvoidingView,
   Platform
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { Ionicons } from "@expo/vector-icons";
+import type { ScrollViewInstance } from "react-native";
 import { Colors } from "../theme/colors";
 import { sendChatMessageApi } from "../services/api";
+import { EDLCareLogo } from "../components/EDLCareLogo";
 
 interface ChatbotScreenProps {
   onNavigate: (screen: string) => void;
   accountNumber?: string;
   token?: string;
+  isGuest?: boolean;
   initialMode?: "guest" | "customer";
 }
+
+const FormattedChatMessage: React.FC<{ text: string; isUser: boolean }> = ({ text, isUser }) => {
+  if (isUser) {
+    return <Text style={[styles.msgText, styles.msgTextUser]}>{text}</Text>;
+  }
+
+  // Parse inline formatting: **bold** and *italic*
+  const renderInline = (raw: string, baseStyle: any, keyPrefix: string) => {
+    // Regex splits on **bold**
+    const boldParts = raw.split(/(\*\*.*?\*\*)/g);
+    return (
+      <Text style={baseStyle}>
+        {boldParts.map((bPart, bIdx) => {
+          if (bPart.startsWith("**") && bPart.endsWith("**") && bPart.length >= 4) {
+            const inner = bPart.slice(2, -2);
+            return (
+              <Text key={`${keyPrefix}-b-${bIdx}`} style={{ fontWeight: "700", color: "#111827" }}>
+                {inner}
+              </Text>
+            );
+          }
+          // Split on *italic*
+          const italicParts = bPart.split(/(\*.*?\*)/g);
+          return italicParts.map((iPart, iIdx) => {
+            if (iPart.startsWith("*") && iPart.endsWith("*") && iPart.length >= 2) {
+              return (
+                <Text key={`${keyPrefix}-i-${bIdx}-${iIdx}`} style={{ fontStyle: "italic", fontWeight: "600", color: "#650B24" }}>
+                  {iPart.slice(1, -1)}
+                </Text>
+              );
+            }
+            return iPart;
+          });
+        })}
+      </Text>
+    );
+  };
+
+  const lines = (text || "").split("\n");
+
+  return (
+    <View style={{ gap: 4 }}>
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <View key={idx} style={{ height: 4 }} />;
+        }
+
+        // Headings: ###, ##, #
+        const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+        if (headingMatch) {
+          const headingContent = headingMatch[2];
+          return (
+            <View key={idx} style={{ marginTop: 6, marginBottom: 2 }}>
+              {renderInline(headingContent, styles.markdownHeading, `h-${idx}`)}
+            </View>
+          );
+        }
+
+        // Bullet lists: * or - or •
+        const bulletMatch = trimmed.match(/^[\*\-\•]\s+(.+)$/);
+        if (bulletMatch) {
+          const bulletContent = bulletMatch[1];
+          return (
+            <View key={idx} style={{ flexDirection: "row", alignItems: "flex-start", paddingLeft: 4, marginVertical: 1 }}>
+              <Text style={{ fontSize: 13, color: "#650B24", marginRight: 6, lineHeight: 22 }}>•</Text>
+              <View style={{ flex: 1 }}>
+                {renderInline(bulletContent, [styles.msgText, styles.msgTextBot], `bl-${idx}`)}
+              </View>
+            </View>
+          );
+        }
+
+        // Numbered list: 1. 2. etc
+        const numberedMatch = trimmed.match(/^(\d+\.)\s+(.+)$/);
+        if (numberedMatch) {
+          const num = numberedMatch[1];
+          const content = numberedMatch[2];
+          return (
+            <View key={idx} style={{ flexDirection: "row", alignItems: "flex-start", paddingLeft: 4, marginVertical: 1 }}>
+              <Text style={{ fontSize: 13, fontWeight: "700", color: "#650B24", marginRight: 6, lineHeight: 22 }}>
+                {num}
+              </Text>
+              <View style={{ flex: 1 }}>
+                {renderInline(content, [styles.msgText, styles.msgTextBot], `nl-${idx}`)}
+              </View>
+            </View>
+          );
+        }
+
+        // Standard text line
+        return (
+          <View key={idx} style={{ marginVertical: 1 }}>
+            {renderInline(trimmed, [styles.msgText, styles.msgTextBot], `p-${idx}`)}
+          </View>
+        );
+      })}
+    </View>
+  );
+};
 
 export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
   onNavigate,
   accountNumber = "0412345678",
   token,
-  initialMode = "customer"
+  isGuest = true,
+  initialMode
 }) => {
-  const [mode, setMode] = useState<"guest" | "customer">(initialMode);
-  const [language, setLanguage] = useState<"en" | "si" | "ta">("en");
-  const [messages, setMessages] = useState<any[]>([]);
+  const isAuthenticated = Boolean(token && !isGuest);
+  const mode = initialMode || (isAuthenticated ? "customer" : "guest");
+
+  const welcomeText = isAuthenticated
+    ? `Ayubowan! Connected to Account #${accountNumber}. How can I assist you today with your billing, electricity usage, solar, or outage queries?`
+    : "Ayubowan! I am your EDL Assistant. You can ask me anything about electricity tariffs, power outages, rooftop solar schemes, energy-saving tips, or electrical safety guidelines. If you need personal bill records or complaint status, sign in anytime!";
+
+  const sampleQuestions = isAuthenticated
+    ? [
+        "Check my outstanding balance",
+        "Explain electricity tariffs",
+        "How can I save electricity?",
+        "Compare with last month",
+        "Solar net-metering info",
+        "Track my complaint"
+      ]
+    : [
+        "Explain electricity tariffs",
+        "How can I save electricity?",
+        "Check power outages",
+        "Solar net-metering info",
+        "What is my bill balance?",
+        "Electrical safety tips"
+      ];
+
+  const [messages, setMessages] = useState<any[]>([
+    {
+      id: "initial-msg",
+      sender: "assistant",
+      text: welcomeText,
+      mode
+    }
+  ]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const sessionIdRef = useRef<string>("mob-sess-" + Math.random().toString(36).substring(2, 9));
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  useEffect(() => {
-    // Initial welcome message
-    const welcome = mode === "guest"
-      ? "Ayubowan / Vanakkam! I am your EDL Care Assistant in Guest Mode. I can explain domestic tariffs, electrical safety protocols, and outage guidance. Sign in anytime to access personal bills."
-      : `Ayubowan! Connected to Account #${accountNumber}. I can answer questions about your October bill (Rs. 4,850.00), consumption trends, or breakdown tracking.`;
-
-    setMessages([
-      {
-        id: "msg-welcome",
-        sender: "assistant",
-        text: welcome,
-        mode,
-        sources: ["EDL Official Guidelines 2026"]
-      }
-    ]);
-  }, [mode, language]);
-
-  const guestChips = [
-    "Explain electricity tariffs",
-    "What is my bill balance?",
-    "Electrical safety guidance",
-    "Check outage info"
-  ];
-
-  const customerChips = [
-    "Check my outstanding balance",
-    "Why is my bill high?",
-    "Compare with last month",
-    "Track my complaint"
-  ];
-
-  const activeChips = mode === "guest" ? guestChips : customerChips;
+  const scrollViewRef = useRef<ScrollViewInstance | null>(null);
 
   const handleSend = async (customText?: string) => {
     const textToSend = (customText || inputText).trim();
@@ -86,7 +189,7 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
       const res = await sendChatMessageApi(
         textToSend,
         mode,
-        language,
+        "en",
         accountNumber,
         sessionIdRef.current,
         token
@@ -107,7 +210,7 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
       const botMsg = {
         id: "ast-" + Date.now(),
         sender: "assistant",
-        text: `⚠️ Communication error: ${err.message || "Unable to reach EDL Care backend."} Please check that the server is running on 0.0.0.0:8000.`,
+        text: err.message || "Sorry, I am having trouble connecting to the EDL Assistant server right now. Please try again.",
         mode
       };
       setMessages((prev) => [...prev, botMsg]);
@@ -124,69 +227,64 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      {/* Top Header */}
+      <StatusBar style="light" />
+
+      {/* Top Rounded Header Container */}
       <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => onNavigate("dashboard")}>
-            <Text style={styles.backBtnText}>← Back</Text>
+        {/* Navigation Bar Row */}
+        <View style={styles.navRow}>
+          {/* Back Button */}
+          <TouchableOpacity
+            style={styles.backBtn}
+            activeOpacity={0.7}
+            onPress={() => onNavigate("dashboard")}
+          >
+            <Ionicons name="arrow-back" size={26} color="#FFFFFF" />
           </TouchableOpacity>
-          <View style={styles.titleCol}>
-            <Text style={styles.headerTitle}>EDL Care Assistant</Text>
-            <Text style={styles.headerSubtitle}>Google Gemini • ChromaDB RAG</Text>
-          </View>
-          {/* Language Switcher */}
-          <View style={styles.langRow}>
-            {(["en", "si", "ta"] as const).map((l) => (
-              <TouchableOpacity
-                key={l}
-                style={[styles.langPill, language === l && styles.langPillActive]}
-                onPress={() => setLanguage(l)}
-              >
-                <Text style={[styles.langText, language === l && styles.langTextActive]}>
-                  {l.toUpperCase()}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+
+          {/* Grid Button Pill */}
+          <TouchableOpacity
+            style={styles.gridPill}
+            activeOpacity={0.8}
+            onPress={() => onNavigate("dashboard")}
+          >
+            <Ionicons name="grid" size={16} color="#FFFFFF" />
+            <Text style={styles.gridPillText}>Grid</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Mode Selector Pill */}
-        <View style={styles.modeSwitchBar}>
-          <TouchableOpacity
-            style={[styles.modeTab, mode === "guest" && styles.modeTabActiveGuest]}
-            onPress={() => setMode("guest")}
-          >
-            <Text style={[styles.modeTabText, mode === "guest" && styles.modeTabTextActive]}>
-              🔓 Guest Mode
-            </Text>
-          </TouchableOpacity>
+        {/* Hero Section (Left-aligned) */}
+        <View style={styles.heroSection}>
+          {/* Glowing Robot Orb Avatar */}
+          <View style={styles.avatarOrbWrapper}>
+            <EDLCareLogo variant="circle" size={82} />
+          </View>
 
-          <TouchableOpacity
-            style={[styles.modeTab, mode === "customer" && styles.modeTabActiveCust]}
-            onPress={() => setMode("customer")}
-          >
-            <Text style={[styles.modeTabText, mode === "customer" && styles.modeTabTextActiveCust]}>
-              🛡️ Customer Mode
-            </Text>
-          </TouchableOpacity>
+          {/* Subtitle */}
+          <Text style={styles.heroSubtitle}>Your AI assistant for EDL services</Text>
+
+          {/* Main Title */}
+          <Text style={styles.heroTitle}>EDL Assistant</Text>
         </View>
       </View>
 
-      {/* Scope Banner */}
-      <View style={mode === "customer" ? styles.scopeBannerCust : styles.scopeBannerGuest}>
-        <Text style={mode === "customer" ? styles.scopeTextCust : styles.scopeTextGuest}>
-          {mode === "customer"
-            ? `Verified Account #${accountNumber} • Full Personalized Access`
-            : "Guest Mode • Public Knowledge Base Only (Personal Bills Gated)"}
-        </Text>
-      </View>
-
-      {/* Messages Scroll Area */}
+      {/* Chat Messages Scroll Area */}
       <ScrollView
         ref={scrollViewRef}
         style={styles.chatScroll}
         contentContainerStyle={styles.chatScrollContent}
+        showsVerticalScrollIndicator={false}
       >
+        {/* Timeline Divider Pill: "Just now" */}
+        <View style={styles.timelineDivider}>
+          <View style={styles.timelineLine} />
+          <View style={styles.timelinePill}>
+            <Text style={styles.timelineText}>Just now</Text>
+          </View>
+          <View style={styles.timelineLine} />
+        </View>
+
+        {/* Messages Stream */}
         {messages.map((m) => (
           <View
             key={m.id}
@@ -195,27 +293,40 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
               m.sender === "user" ? styles.msgWrapperUser : styles.msgWrapperBot
             ]}
           >
+            {m.sender === "assistant" && (
+              <View style={styles.botAvatarBadge}>
+                <EDLCareLogo variant="bubble-avatar" size={38} />
+              </View>
+            )}
+
             <View
               style={[
                 styles.msgBubble,
                 m.sender === "user" ? styles.msgBubbleUser : styles.msgBubbleBot
               ]}
             >
-              <Text
-                style={[
-                  styles.msgText,
-                  m.sender === "user" ? styles.msgTextUser : styles.msgTextBot
-                ]}
-              >
-                {m.text}
-              </Text>
+              <FormattedChatMessage text={m.text} isUser={m.sender === "user"} />
 
-              {/* Structured Response Card */}
+              {/* Rich Service Card (if applicable) */}
               {m.richCard && (
                 <View style={styles.richCardContainer}>
                   <View style={styles.richCardHeader}>
+                    <Ionicons
+                      name={
+                        m.richCard.type === "bill"
+                          ? "receipt-outline"
+                          : m.richCard.type === "complaint"
+                          ? "alert-circle-outline"
+                          : m.richCard.type === "solar"
+                          ? "sunny-outline"
+                          : "stats-chart-outline"
+                      }
+                      size={15}
+                      color="#650B24"
+                      style={{ marginRight: 6 }}
+                    />
                     <Text style={styles.richCardTitle}>
-                      {m.richCard.type === "bill" ? "💳" : m.richCard.type === "complaint" ? "🚨" : m.richCard.type === "solar" ? "☀️" : "📊"} {m.richCard.title || "Service Details"}
+                      {m.richCard.title || "Service Details"}
                     </Text>
                   </View>
                   {m.richCard.type === "bill" && (
@@ -250,39 +361,30 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
                 </View>
               )}
 
-              {/* Action: Pay Now */}
-              {m.actionRequired === "pay" && mode === "customer" && (
+              {/* Action Buttons */}
+              {m.actionRequired === "pay" && isAuthenticated && (
                 <View style={styles.cardActionRow}>
                   <TouchableOpacity
                     style={styles.actionBtnPay}
                     onPress={() => onNavigate("bill-details")}
                   >
-                    <Text style={styles.actionBtnTextPay}>💳 Pay Outstanding Balance</Text>
+                    <Ionicons name="card-outline" size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.actionBtnTextPay}>Pay Outstanding Balance</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* Action: Login Required */}
-              {m.actionRequired === "login" && mode === "guest" && (
+              {m.actionRequired === "login" && (
                 <View style={styles.cardActionRow}>
                   <TouchableOpacity
                     style={styles.actionBtnLogin}
-                    onPress={() => setMode("customer")}
+                    activeOpacity={0.85}
+                    onPress={() => onNavigate("login")}
                   >
-                    <Text style={styles.actionBtnTextLogin}>🛡️ Switch to Customer Mode</Text>
+                    <Ionicons name="log-in-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.actionBtnTextLogin}>Sign In to Customer Account</Text>
+                    <Ionicons name="arrow-forward" size={14} color="#FFFFFF" style={{ marginLeft: 6 }} />
                   </TouchableOpacity>
-                </View>
-              )}
-
-              {/* RAG Citations */}
-              {m.sources && m.sources.length > 0 && (
-                <View style={styles.sourcesRow}>
-                  <Text style={styles.sourcesLabel}>📚 Sources: </Text>
-                  {m.sources.map((s: string, idx: number) => (
-                    <Text key={idx} style={styles.sourceTag}>
-                      {s}
-                    </Text>
-                  ))}
                 </View>
               )}
             </View>
@@ -291,39 +393,66 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
 
         {isTyping && (
           <View style={styles.typingContainer}>
-            <ActivityIndicator size="small" color={Colors.primaryMaroon} />
-            <Text style={styles.typingText}>EDL AI is reasoning...</Text>
+            <View style={styles.botAvatarBadge}>
+              <EDLCareLogo variant="bubble-avatar" size={38} />
+            </View>
+            <View style={styles.typingBubble}>
+              <ActivityIndicator size="small" color="#650B24" />
+              <Text style={styles.typingText}>EDL Assistant is thinking...</Text>
+            </View>
           </View>
         )}
       </ScrollView>
 
-      {/* Quick Reply Suggestion Chips */}
-      <View style={styles.chipsContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {activeChips.map((chip, idx) => (
+      {/* Sample Questions / Quick Suggestion Chips */}
+      <View style={styles.chipsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsScrollContent}
+        >
+          {sampleQuestions.map((q, idx) => (
             <TouchableOpacity
               key={idx}
               style={styles.chipBtn}
-              onPress={() => handleSend(chip)}
+              activeOpacity={0.7}
+              onPress={() => handleSend(q)}
             >
-              <Text style={styles.chipText}>{chip}</Text>
+              <Ionicons name="sparkles-outline" size={13} color="#650B24" style={{ marginRight: 6 }} />
+              <Text style={styles.chipText}>{q}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {/* Input Field */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder={mode === "guest" ? "Ask guest questions..." : "Ask customer questions..."}
-          placeholderTextColor="#9CA3AF"
-        />
-        <TouchableOpacity style={styles.sendBtn} onPress={() => handleSend()}>
-          <Text style={styles.sendBtnText}>➤</Text>
-        </TouchableOpacity>
+      {/* Floating Bottom Input Bar */}
+      <View style={styles.bottomBarWrapper}>
+        <View style={styles.inputCard}>
+          {/* Attachment Icon */}
+          <TouchableOpacity style={styles.attachBtn} activeOpacity={0.7}>
+            <Ionicons name="attach-outline" size={24} color="#8E8E93" />
+          </TouchableOpacity>
+
+          {/* Input Field */}
+          <TextInput
+            style={styles.input}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder={isAuthenticated ? "Ask about bills, usage, or EDL..." : "Ask about tariffs, outages, solar..."}
+            placeholderTextColor="#9CA3AF"
+            returnKeyType="send"
+            onSubmitEditing={() => handleSend()}
+          />
+
+          {/* Maroon Send Button */}
+          <TouchableOpacity
+            style={styles.sendBtn}
+            activeOpacity={0.8}
+            onPress={() => handleSend()}
+          >
+            <Ionicons name="send" size={16} color="#FFFFFF" style={{ marginLeft: 2 }} />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -332,125 +461,106 @@ export const ChatbotScreen: React.FC<ChatbotScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundLight,
+    backgroundColor: "#F4F4F7",
   },
   header: {
-    backgroundColor: Colors.primaryMaroon,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    backgroundColor: "#650B24",
+    paddingTop: Platform.OS === "ios" ? 14 : 16,
+    paddingHorizontal: 20,
+    paddingBottom: 22,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  headerRow: {
+  navRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 16,
   },
-  backBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "bold",
+  backBtn: {
+    paddingVertical: 4,
+    paddingRight: 12,
   },
-  titleCol: {
-    alignItems: "center",
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  headerSubtitle: {
-    color: Colors.gold,
-    fontSize: 10,
-    fontWeight: "bold",
-    marginTop: 1,
-  },
-  langRow: {
+  gridPill: {
     flexDirection: "row",
-    gap: 4,
-  },
-  langPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
-  langPillActive: {
-    backgroundColor: Colors.gold,
-  },
-  langText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  langTextActive: {
-    color: Colors.darkMaroon,
-  },
-  modeSwitchBar: {
-    flexDirection: "row",
-    backgroundColor: "rgba(0,0,0,0.25)",
-    borderRadius: 10,
-    padding: 3,
-    marginTop: 10,
-  },
-  modeTab: {
-    flex: 1,
-    paddingVertical: 6,
     alignItems: "center",
-    borderRadius: 8,
-  },
-  modeTabActiveGuest: {
-    backgroundColor: "#FFFFFF",
-  },
-  modeTabActiveCust: {
-    backgroundColor: Colors.gold,
-  },
-  modeTabText: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "rgba(255,255,255,0.8)",
-  },
-  modeTabTextActive: {
-    color: Colors.primaryMaroon,
-  },
-  modeTabTextActiveCust: {
-    color: Colors.darkMaroon,
-  },
-  scopeBannerCust: {
-    backgroundColor: "#D1FAE5",
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    paddingHorizontal: 14,
     paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#A7F3D0",
+    borderRadius: 20,
+    gap: 6,
   },
-  scopeTextCust: {
-    color: "#065F46",
-    fontSize: 11,
+  gridPillText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  heroSection: {
+    alignItems: "flex-start",
+    paddingTop: 4,
+  },
+  avatarOrbWrapper: {
+    marginBottom: 12,
+  },
+  heroSubtitle: {
+    color: "rgba(255, 255, 255, 0.88)",
+    fontSize: 13.5,
+    fontWeight: "500",
+    marginBottom: 4,
+    letterSpacing: 0.2,
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 26,
     fontWeight: "bold",
-    textAlign: "center",
-  },
-  scopeBannerGuest: {
-    backgroundColor: "#F3F4F6",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  scopeTextGuest: {
-    color: "#4B5563",
-    fontSize: 11,
-    fontWeight: "bold",
-    textAlign: "center",
+    letterSpacing: 0.3,
   },
   chatScroll: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   chatScrollContent: {
-    padding: 16,
-    paddingBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  timelineDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 14,
+  },
+  timelineLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.08)",
+  },
+  timelinePill: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+    borderRadius: 16,
+    marginHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.05)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  timelineText: {
+    fontSize: 12,
+    color: "#8E8E93",
+    fontWeight: "500",
   },
   msgWrapper: {
-    marginBottom: 12,
     flexDirection: "row",
+    marginVertical: 6,
+    alignItems: "flex-start",
   },
   msgWrapperUser: {
     justifyContent: "flex-end",
@@ -458,190 +568,207 @@ const styles = StyleSheet.create({
   msgWrapperBot: {
     justifyContent: "flex-start",
   },
+  botAvatarBadge: {
+    marginRight: 10,
+    marginTop: 2,
+  },
   msgBubble: {
-    maxWidth: "85%",
-    borderRadius: 16,
-    padding: 12,
+    maxWidth: "82%",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderRadius: 22,
   },
   msgBubbleUser: {
-    backgroundColor: Colors.primaryMaroon,
+    backgroundColor: "#650B24",
     borderBottomRightRadius: 4,
+    shadowColor: "#650B24",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
   },
   msgBubbleBot: {
-    backgroundColor: Colors.cardLight,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   msgText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 15,
+    lineHeight: 22,
   },
   msgTextUser: {
     color: "#FFFFFF",
   },
   msgTextBot: {
-    color: Colors.textPrimary,
+    color: "#1E293B",
   },
-  cardActionRow: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-  },
-  actionBtnPay: {
-    backgroundColor: Colors.primaryMaroon,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  actionBtnTextPay: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-  actionBtnLogin: {
-    backgroundColor: "#10B981",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  actionBtnTextLogin: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-  sourcesRow: {
-    marginTop: 6,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-  },
-  sourcesLabel: {
-    fontSize: 9,
-    color: Colors.textSecondary,
-    fontWeight: "bold",
-  },
-  sourceTag: {
-    fontSize: 9,
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
-    color: Colors.textSecondary,
-    marginRight: 4,
-    marginTop: 2,
-  },
-  typingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 4,
-  },
-  typingText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    fontStyle: "italic",
-  },
-  chipsContainer: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-  },
-  chipBtn: {
-    backgroundColor: Colors.backgroundLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  chipText: {
-    fontSize: 11,
-    color: Colors.textPrimary,
-    fontWeight: "600",
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: Colors.backgroundLight,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    fontSize: 13,
-    color: Colors.textPrimary,
-  },
-  sendBtn: {
-    marginLeft: 8,
-    backgroundColor: Colors.primaryMaroon,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sendBtnText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "bold",
+  markdownHeading: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#650B24",
+    lineHeight: 22,
   },
   richCardContainer: {
     marginTop: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F9FAFB",
     borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    overflow: "hidden",
   },
   richCardHeader: {
-    backgroundColor: "#F9FAFB",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
   },
   richCardTitle: {
     fontSize: 12,
     fontWeight: "bold",
-    color: Colors.primaryMaroon,
+    color: "#650B24",
   },
   richCardBody: {
-    padding: 10,
+    gap: 2,
   },
   richCardMain: {
     fontSize: 16,
     fontWeight: "bold",
-    color: Colors.textPrimary,
+    color: "#1E293B",
   },
   richCardSub: {
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.textSecondary,
-    marginTop: 2,
-    marginBottom: 8,
   },
   richCardBtn: {
-    backgroundColor: Colors.primaryMaroon,
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    alignItems: "center",
+    marginTop: 8,
+    alignSelf: "flex-start",
   },
   richCardBtnText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#650B24",
+  },
+  cardActionRow: {
+    marginTop: 10,
+  },
+  actionBtnPay: {
+    flexDirection: "row",
+    backgroundColor: "#650B24",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  actionBtnTextPay: {
     color: "#FFFFFF",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "bold",
+  },
+  actionBtnLogin: {
+    flexDirection: "row",
+    backgroundColor: "#650B24",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionBtnTextLogin: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  typingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 6,
+  },
+  typingBubble: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  typingText: {
+    fontSize: 12,
+    color: "#64748B",
+    fontStyle: "italic",
+  },
+  chipsWrapper: {
+    paddingVertical: 6,
+    backgroundColor: "#F4F4F7",
+  },
+  chipsScrollContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  chipBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.06)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  chipText: {
+    fontSize: 12.5,
+    color: "#1E293B",
+    fontWeight: "500",
+  },
+  bottomBarWrapper: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === "ios" ? 28 : 16,
+    backgroundColor: "#F4F4F7",
+  },
+  inputCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 26,
+    paddingHorizontal: 10,
+    paddingVertical: Platform.OS === "ios" ? 6 : 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.04)",
+  },
+  attachBtn: {
+    padding: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: "#1E293B",
+    paddingHorizontal: 8,
+    paddingVertical: Platform.OS === "ios" ? 8 : 6,
+  },
+  sendBtn: {
+    backgroundColor: "#650B24",
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

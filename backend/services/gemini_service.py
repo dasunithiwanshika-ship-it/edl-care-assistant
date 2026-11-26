@@ -29,6 +29,7 @@ class GeminiService:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY", "")
         self.client = None
+        self.last_used_model = None
         if self.api_key and GENAI_AVAILABLE:
             try:
                 self.client = genai.Client(api_key=self.api_key)
@@ -56,10 +57,19 @@ class GeminiService:
             return None
 
         try:
-            # Construct grounded context
+            # Construct grounded context with strict anti-hallucination guard
+            if rag_context and rag_context.strip():
+                rag_section = f"### OFFICIAL EDL RETRIEVED KNOWLEDGE ###\n{rag_context}\n\n"
+            else:
+                rag_section = (
+                    "### OFFICIAL EDL RETRIEVED KNOWLEDGE ###\n"
+                    "[No matching official documentation found for this question]\n"
+                    "CRITICAL ANTI-HALLUCINATION RULE: If the user asks for specific tariffs, rates, rules, or contact numbers not present in official knowledge, do NOT invent or guess numbers. State clearly that official EDL documentation for this is not available or direct them to the demonstration helpline (1987, modeled on Sri Lankan utility emergency lines) or advise contacting national emergency services in genuine real-life emergencies.\n\n"
+                )
+
             grounded_prompt = (
                 f"### SYSTEM INSTRUCTIONS ###\n{system_instruction}\n\n"
-                f"### OFFICIAL EDL RETRIEVED KNOWLEDGE ###\n{rag_context}\n\n"
+                f"{rag_section}"
             )
 
             if conversation_history:
@@ -75,14 +85,26 @@ class GeminiService:
                 "Do NOT fabricate non-existent numbers or policies."
             )
 
-            # Call Gemini
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=grounded_prompt,
-            )
+            # Call Gemini (try primary active models)
+            preferred_model = os.getenv("GEMINI_MODEL", "models/gemini-3.6-flash")
+            candidate_models = []
+            for m in [preferred_model, "models/gemini-3.6-flash", "models/gemini-3.5-flash", "models/gemini-3.1-flash-lite"]:
+                if m not in candidate_models:
+                    candidate_models.append(m)
 
-            if response and response.text:
-                return response.text.strip()
+            for mod in candidate_models:
+                try:
+                    response = self.client.models.generate_content(
+                        model=mod,
+                        contents=grounded_prompt,
+                    )
+                    if response and response.text:
+                        self.last_used_model = mod
+                        print(f"[GeminiService] Chat generation succeeded using model: {mod}")
+                        return response.text.strip()
+                except Exception as model_err:
+                    print(f"[GeminiService] Model {mod} attempt failed: {model_err}")
+                    continue
         except Exception as e:
             print(f"Gemini generation error (falling back to deterministic mock): {e}")
             return None

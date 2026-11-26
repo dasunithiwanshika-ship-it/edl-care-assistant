@@ -1,14 +1,14 @@
 """
-Customer Services & Billing Endpoints for EDL Care Assistant
-Enforces account isolation: customers can only view their own bills, records, and balances.
+Customer Services & Billing Endpoints for EDL Care Assistant (MongoDB Atlas)
+Enforces strict account isolation, customer ownership, and immutable payment ledger persistence.
 """
 
-from typing import List
+from typing import List, Dict, Any
 import uuid
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from backend.app.database import get_db
-from backend.app.db_models import Account, Bill, ConsumptionRecord
+from pymongo.database import Database
+from backend.app.mongo_db import get_db, clean_doc, clean_docs
 from backend.app.schemas import (
     CustomerProfile, BillDetail, ConsumptionHistoryItem, PaymentRequest, PaymentResponse
 )
@@ -17,70 +17,65 @@ from backend.app.auth import require_authenticated_account
 router = APIRouter(prefix="/api/customers", tags=["Customer Services"])
 
 @router.get("/me", response_model=CustomerProfile)
-def get_my_account(account: Account = Depends(require_authenticated_account)):
+def get_my_account(account: dict = Depends(require_authenticated_account)):
     """Returns the authenticated customer's account summary."""
-    cust = account.customer
+    cust = account.get("customer") or {}
     return CustomerProfile(
-        id=cust.id,
-        username=cust.username,
-        email=cust.email,
-        full_name=cust.full_name,
-        phone=cust.phone,
-        account_number=account.account_number,
-        premises_address=account.premises_address,
-        tariff_category=account.tariff_category,
-        connected_feeder=account.connected_feeder,
-        substation_code=account.substation_code,
-        outstanding_balance=account.outstanding_balance,
-        due_date=account.due_date,
-        monthly_consumption_kwh=account.monthly_consumption_kwh,
-        monthly_average_kwh=account.monthly_average_kwh,
-        is_solar=account.is_solar,
-        solar_capacity_kw=account.solar_capacity_kw
+        id=cust.get("id", account.get("customer_id", 0)),
+        username=cust.get("username", "customer"),
+        email=cust.get("email", ""),
+        full_name=cust.get("full_name", "Valued Customer"),
+        phone=cust.get("phone", ""),
+        account_number=account["account_number"],
+        premises_address=account["premises_address"],
+        tariff_category=account.get("tariff_category", "Domestic (D-1)"),
+        connected_feeder=account.get("connected_feeder", "Feeder F-04 Havelock"),
+        substation_code=account.get("substation_code", "TR-402 (Nugegoda)"),
+        outstanding_balance=account.get("outstanding_balance", 0.0),
+        due_date=account.get("due_date", "2026-11-25"),
+        monthly_consumption_kwh=account.get("monthly_consumption_kwh", 0),
+        monthly_average_kwh=account.get("monthly_average_kwh", 0),
+        is_solar=bool(account.get("is_solar", False)),
+        solar_capacity_kw=account.get("solar_capacity_kw", 0.0)
     )
 
 @router.get("/me/bills", response_model=List[BillDetail])
 def get_my_bills(
-    account: Account = Depends(require_authenticated_account),
-    db: Session = Depends(get_db)
+    account: dict = Depends(require_authenticated_account),
+    db: Database = Depends(get_db)
 ):
-    """Returns all billing statements belonging to the authenticated customer."""
-    bills = db.query(Bill).filter(Bill.account_id == account.id).order_by(Bill.id.desc()).all()
+    """Returns all billing statements belonging strictly to the authenticated customer."""
+    bills = list(db.bills.find({"account_id": account["id"]}).sort("id", -1))
     return [
         BillDetail(
-            id=b.id,
-            billing_month=b.billing_month,
-            previous_reading=b.previous_reading,
-            present_reading=b.present_reading,
-            units_consumed=b.units_consumed,
-            energy_charge=b.energy_charge,
-            fixed_charge=b.fixed_charge,
-            fuel_adjustment=b.fuel_adjustment,
-            total_amount=b.total_amount,
-            due_date=b.due_date,
-            is_paid=b.is_paid
+            id=b.get("id", 0),
+            billing_month=b["billing_month"],
+            previous_reading=b.get("previous_reading", 0),
+            present_reading=b.get("present_reading", 0),
+            units_consumed=b.get("units_consumed", 0),
+            energy_charge=b.get("energy_charge", 0.0),
+            fixed_charge=b.get("fixed_charge", 0.0),
+            fuel_adjustment=b.get("fuel_adjustment", 0.0),
+            total_amount=b.get("total_amount", 0.0),
+            due_date=b.get("due_date", ""),
+            is_paid=bool(b.get("is_paid", False))
         )
         for b in bills
     ]
 
 @router.get("/me/consumption", response_model=List[ConsumptionHistoryItem])
 def get_my_consumption(
-    account: Account = Depends(require_authenticated_account),
-    db: Session = Depends(get_db)
+    account: dict = Depends(require_authenticated_account),
+    db: Database = Depends(get_db)
 ):
     """Returns 12-month historical electricity consumption records."""
-    records = (
-        db.query(ConsumptionRecord)
-        .filter(ConsumptionRecord.account_id == account.id)
-        .order_by(ConsumptionRecord.id.asc())
-        .all()
-    )
+    records = list(db.consumption_records.find({"account_id": account["id"]}).sort("id", 1))
     return [
         ConsumptionHistoryItem(
-            month=r.month,
-            year=r.year,
-            units_kwh=r.units_kwh,
-            amount_lkr=r.amount_lkr
+            month=r["month"],
+            year=r.get("year", 2026),
+            units_kwh=r.get("units_kwh", 0),
+            amount_lkr=r.get("amount_lkr", 0.0)
         )
         for r in records
     ]
@@ -88,39 +83,62 @@ def get_my_consumption(
 @router.post("/me/pay", response_model=PaymentResponse)
 def pay_bill(
     req: PaymentRequest,
-    account: Account = Depends(require_authenticated_account),
-    db: Session = Depends(get_db)
+    account: dict = Depends(require_authenticated_account),
+    db: Database = Depends(get_db)
 ):
     """
     Demonstration Instant Payment:
-    Deducts balance in SQLite and marks the active bill as paid.
+    Deducts balance in MongoDB, marks active bill as paid,
+    and saves an immutable transaction record to payment_transactions collection.
     """
     # Enforce account ownership
-    if req.account_number != account.account_number:
+    if req.account_number != account["account_number"]:
         raise HTTPException(
             status_code=403,
             detail="Forbidden: You cannot pay a bill for another customer's account."
         )
 
-    # Process deduction
-    amount_paid = min(req.amount, account.outstanding_balance)
-    account.outstanding_balance = max(0.0, account.outstanding_balance - req.amount)
-    account.last_payment_amount = req.amount
-    account.last_payment_date = "Today"
+    # Calculate deduction
+    current_balance = account.get("outstanding_balance", 0.0)
+    amount_paid = min(req.amount, current_balance)
+    new_balance = max(0.0, current_balance - req.amount)
 
-    # Mark bill as paid if balance cleared
-    if account.outstanding_balance == 0.0:
-        latest_bill = db.query(Bill).filter(Bill.account_id == account.id).order_by(Bill.id.desc()).first()
+    # Update account in MongoDB
+    db.accounts.update_one(
+        {"account_number": account["account_number"]},
+        {"$set": {
+            "outstanding_balance": new_balance,
+            "last_payment_amount": req.amount,
+            "last_payment_date": "Today"
+        }}
+    )
+
+    # Mark latest bill as paid if balance cleared
+    if new_balance == 0.0:
+        latest_bill = db.bills.find_one({"account_id": account["id"]}, sort=[("id", -1)])
         if latest_bill:
-            latest_bill.is_paid = True
+            db.bills.update_one({"_id": latest_bill["_id"]}, {"$set": {"is_paid": True}})
 
-    db.commit()
-
+    # Generate immutable transaction ledger record
     tx_id = f"PAY-EDL-{uuid.uuid4().hex[:8].upper()}"
+    tx_doc = {
+        "transaction_id": tx_id,
+        "account_number": account["account_number"],
+        "account_id": account["id"],
+        "customer_id": account.get("customer_id"),
+        "amount_requested": req.amount,
+        "amount_paid": amount_paid,
+        "remaining_balance": new_balance,
+        "payment_method": req.payment_method.lower(),
+        "status": "SUCCESS",
+        "created_at": datetime.utcnow()
+    }
+    db.payment_transactions.insert_one(tx_doc)
+
     return PaymentResponse(
         status="SUCCESS",
         transaction_id=tx_id,
         amount_paid=amount_paid,
-        remaining_balance=account.outstanding_balance,
+        remaining_balance=new_balance,
         message=f"Payment of Rs. {amount_paid:,.2f} processed successfully via {req.payment_method.upper()}."
     )

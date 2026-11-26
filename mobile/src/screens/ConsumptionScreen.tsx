@@ -5,8 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
 import { getConsumptionApi } from "../services/api";
 
@@ -16,7 +18,11 @@ interface ConsumptionProps {
   accountNumber?: string;
 }
 
-export const ConsumptionScreen: React.FC<ConsumptionProps> = ({ onNavigate, token, accountNumber = "0412345678" }) => {
+export const ConsumptionScreen: React.FC<ConsumptionProps> = ({
+  onNavigate,
+  token,
+  accountNumber = "0412345678"
+}) => {
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,63 +37,92 @@ export const ConsumptionScreen: React.FC<ConsumptionProps> = ({ onNavigate, toke
       });
   }, [token]);
 
-  const maxKwh = Math.max(...records.map(r => r.units_kwh), 200);
+  const maxKwh = Math.max(...records.map((r) => r.units_kwh), 200);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Top Rounded Header Container */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => onNavigate("dashboard")}>
-          <Text style={styles.backBtnText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Consumption Trends</Text>
-        <View style={{ width: 40 }} />
-      </View>
+        <View style={styles.navRow}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            activeOpacity={0.7}
+            onPress={() => onNavigate("dashboard")}
+          >
+            <Ionicons name="arrow-back" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
 
-      {/* Main Bar Chart Card */}
-      <View style={styles.chartCard}>
-        <Text style={styles.chartTitle}>6-Month Electricity Consumption (kWh)</Text>
-        <Text style={styles.chartSubtitle}>Domestic Block Efficiency Tracker</Text>
-
-        <View style={styles.barsContainer}>
-          {records.map((r, i) => {
-            const barHeight = Math.max(20, (r.units_kwh / maxKwh) * 120);
-            const isOct = r.month === "Oct";
-            return (
-              <View key={i} style={styles.barCol}>
-                <Text style={styles.barValue}>{r.units_kwh}</Text>
-                <View
-                  style={[
-                    styles.barFill,
-                    { height: barHeight },
-                    isOct && styles.barFillOct
-                  ]}
-                />
-                <Text style={[styles.barMonth, isOct && styles.barMonthOct]}>{r.month}</Text>
-              </View>
-            );
-          })}
+          <TouchableOpacity
+            style={styles.gridPill}
+            activeOpacity={0.8}
+            onPress={() => onNavigate("dashboard")}
+          >
+            <Ionicons name="grid" size={16} color="#FFFFFF" />
+            <Text style={styles.gridPillText}>Grid</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.chartFooter}>
-          <Text style={styles.averageLabel}>Average: 154 kWh / month</Text>
-          <Text style={styles.trendLabel}>October: -11.2% Reduction</Text>
+        <View style={styles.heroSection}>
+          <Text style={styles.heroSubtitle}>ACCOUNT #{accountNumber} • 6-MONTH TELEMETRY</Text>
+          <Text style={styles.heroTitle}>Consumption Trends</Text>
         </View>
       </View>
 
-      {/* Monthly Breakdown Table */}
-      <View style={styles.tableCard}>
-        <Text style={styles.tableTitle}>Historical Billing Statements</Text>
-        {records.map((r, i) => (
-          <View key={i} style={styles.tableRow}>
+      <View style={styles.bodyContent}>
+        {/* Main Bar Chart Card */}
+        <View style={styles.chartCard}>
+          <View style={styles.chartHeader}>
             <View>
-              <Text style={styles.rowMonth}>{r.month} {r.year}</Text>
-              <Text style={styles.rowUnits}>{r.units_kwh} units (kWh)</Text>
+              <Text style={styles.chartTitle}>Monthly Electricity Consumption</Text>
+              <Text style={styles.chartSubtitle}>Domestic Block Efficiency Tracker (kWh)</Text>
             </View>
-            <Text style={styles.rowAmount}>
-              Rs. {Number(r.amount_lkr).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-            </Text>
+            <View style={styles.trendBadge}>
+              <Ionicons name="trending-down" size={12} color="#10B981" style={{ marginRight: 3 }} />
+              <Text style={styles.trendGreen}>-11.2%</Text>
+            </View>
           </View>
-        ))}
+
+          <View style={styles.barsContainer}>
+            {records.map((r, i) => {
+              const barHeight = Math.max(20, (r.units_kwh / maxKwh) * 120);
+              const isOct = r.month === "Oct";
+              return (
+                <View key={i} style={styles.barCol}>
+                  <Text style={styles.barValue}>{r.units_kwh}</Text>
+                  <View
+                    style={[
+                      styles.barFill,
+                      { height: barHeight },
+                      isOct && styles.barFillOct
+                    ]}
+                  />
+                  <Text style={[styles.barMonth, isOct && styles.barMonthOct]}>{r.month}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          <View style={styles.chartFooter}>
+            <Text style={styles.averageLabel}>6-Month Average: 154 kWh / month</Text>
+            <Text style={styles.trendLabel}>October: 142 kWh (-11.2%)</Text>
+          </View>
+        </View>
+
+        {/* Monthly Breakdown Table Card */}
+        <View style={styles.tableCard}>
+          <Text style={styles.tableTitle}>Historical Billing Statements</Text>
+          {records.map((r, i) => (
+            <View key={i} style={styles.tableRow}>
+              <View>
+                <Text style={styles.rowMonth}>{r.month} {r.year}</Text>
+                <Text style={styles.rowUnits}>{r.units_kwh} units (kWh)</Text>
+              </View>
+              <Text style={styles.rowAmount}>
+                Rs. {Number(r.amount_lkr).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </Text>
+            </View>
+          ))}
+        </View>
       </View>
     </ScrollView>
   );
@@ -96,52 +131,109 @@ export const ConsumptionScreen: React.FC<ConsumptionProps> = ({ onNavigate, toke
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundLight,
+    backgroundColor: "#F4F4F7",
   },
   content: {
-    padding: 16,
     paddingBottom: 40,
   },
   header: {
-    backgroundColor: Colors.primaryMaroon,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+    backgroundColor: "#650B24",
+    paddingTop: Platform.OS === "ios" ? 14 : 16,
+    paddingHorizontal: 20,
+    paddingBottom: 22,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  navRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginHorizontal: -16,
-    marginTop: -16,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  backBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "bold",
+  backBtn: {
+    paddingVertical: 4,
+    paddingRight: 12,
   },
-  headerTitle: {
+  gridPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  gridPillText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  heroSection: {
+    alignItems: "flex-start",
+    paddingTop: 2,
+  },
+  heroSubtitle: {
+    color: "rgba(255, 255, 255, 0.85)",
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 24,
     fontWeight: "bold",
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+  bodyContent: {
+    padding: 16,
   },
   chartCard: {
-    backgroundColor: Colors.cardLight,
-    padding: 16,
-    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    padding: 18,
+    borderRadius: 22,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: "rgba(0, 0, 0, 0.04)",
+  },
+  chartHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 16,
   },
   chartTitle: {
     fontSize: 14,
     fontWeight: "bold",
-    color: Colors.textPrimary,
+    color: "#1E293B",
   },
   chartSubtitle: {
     fontSize: 11,
-    color: Colors.textSecondary,
+    color: "#64748B",
     marginTop: 2,
-    marginBottom: 20,
+  },
+  trendBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  trendGreen: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#10B981",
   },
   barsContainer: {
     flexDirection: "row",
@@ -150,7 +242,7 @@ const styles = StyleSheet.create({
     height: 150,
     paddingHorizontal: 6,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: "rgba(0, 0, 0, 0.06)",
     paddingBottom: 4,
   },
   barCol: {
@@ -160,53 +252,59 @@ const styles = StyleSheet.create({
   barValue: {
     fontSize: 10,
     fontWeight: "bold",
-    color: Colors.textSecondary,
+    color: "#64748B",
     marginBottom: 4,
   },
   barFill: {
     width: 22,
-    backgroundColor: Colors.primaryMaroon,
+    backgroundColor: "#650B24",
     borderRadius: 6,
   },
   barFillOct: {
-    backgroundColor: Colors.gold,
+    backgroundColor: "#D97706",
   },
   barMonth: {
-    fontSize: 10,
-    color: Colors.textSecondary,
+    fontSize: 11,
+    color: "#64748B",
     marginTop: 6,
     fontWeight: "600",
   },
   barMonthOct: {
-    color: Colors.primaryMaroon,
+    color: "#650B24",
     fontWeight: "bold",
   },
   chartFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 12,
+    marginTop: 14,
+    paddingTop: 8,
   },
   averageLabel: {
-    fontSize: 11,
-    color: Colors.textSecondary,
+    fontSize: 11.5,
+    color: "#64748B",
   },
   trendLabel: {
-    fontSize: 11,
-    color: Colors.success,
+    fontSize: 11.5,
+    color: "#10B981",
     fontWeight: "bold",
   },
   tableCard: {
-    backgroundColor: Colors.cardLight,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 18,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: "rgba(0, 0, 0, 0.04)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   tableTitle: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: "bold",
-    color: Colors.textPrimary,
-    marginBottom: 10,
+    color: "#1E293B",
+    marginBottom: 12,
   },
   tableRow: {
     flexDirection: "row",
@@ -214,21 +312,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: "rgba(0, 0, 0, 0.04)",
   },
   rowMonth: {
     fontSize: 13,
     fontWeight: "bold",
-    color: Colors.textPrimary,
+    color: "#1E293B",
   },
   rowUnits: {
-    fontSize: 11,
-    color: Colors.textSecondary,
+    fontSize: 11.5,
+    color: "#64748B",
     marginTop: 2,
   },
   rowAmount: {
     fontSize: 14,
     fontWeight: "bold",
-    color: Colors.primaryMaroon,
+    color: "#650B24",
   },
 });

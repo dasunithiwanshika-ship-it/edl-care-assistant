@@ -5,9 +5,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  StatusBar,
-  Alert
+  Alert,
+  LogBox,
+  Platform
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+
+// Suppress known deprecation warning for react-native built-in SafeAreaView
+LogBox.ignoreLogs(["SafeAreaView has been deprecated"]);
+import { StatusBar } from "expo-status-bar";
 import { Colors } from "./src/theme/colors";
 import { DashboardScreen } from "./src/screens/DashboardScreen";
 import { ChatbotScreen } from "./src/screens/ChatbotScreen";
@@ -17,6 +23,8 @@ import { ConsumptionScreen } from "./src/screens/ConsumptionScreen";
 import { ComplaintsScreen } from "./src/screens/ComplaintsScreen";
 import { SolarScreen } from "./src/screens/SolarScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
+import { RegisterScreen } from "./src/screens/RegisterScreen";
+import { EDLCareLogo } from "./src/components/EDLCareLogo";
 import { setSessionExpiredHandler } from "./src/services/api";
 import {
   saveAuthToken,
@@ -91,12 +99,63 @@ export default function App() {
     setCurrentScreen("login");
   };
 
+  const renderProtectedPrompt = (title: string, desc: string, icon: any) => (
+    <View style={styles.protectedPromptContainer}>
+      <View style={styles.protectedCard}>
+        <View style={styles.protectedIconCircle}>
+          <Ionicons name={icon} size={36} color="#650B24" />
+        </View>
+        <Text style={styles.protectedTitle}>{title}</Text>
+        <Text style={styles.protectedSubtitle}>{desc}</Text>
+
+        <TouchableOpacity
+          style={styles.protectedPrimaryBtn}
+          activeOpacity={0.85}
+          onPress={() => setCurrentScreen("login")}
+        >
+          <Ionicons name="log-in-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+          <Text style={styles.protectedPrimaryBtnText}>Sign In to Account</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.protectedSecondaryBtn}
+          activeOpacity={0.85}
+          onPress={() => setCurrentScreen("register")}
+        >
+          <Ionicons name="person-add-outline" size={18} color="#650B24" style={{ marginRight: 6 }} />
+          <Text style={styles.protectedSecondaryBtnText}>Create New Account</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.protectedBackLink}
+          onPress={() => setCurrentScreen("dashboard")}
+        >
+          <Text style={styles.protectedBackLinkText}>← Return to Public Dashboard</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const renderScreen = () => {
     switch (currentScreen) {
       case "login":
         return (
           <LoginScreen
             onLoginSuccess={handleLoginSuccess}
+            onNavigateToRegister={() => setCurrentScreen("register")}
+            onContinueAsGuest={handleContinueAsGuest}
+            onOpenGuestChat={() => {
+              setIsGuest(true);
+              setToken(undefined);
+              setCurrentScreen("chatbot");
+            }}
+          />
+        );
+      case "register":
+        return (
+          <RegisterScreen
+            onRegisterSuccess={handleLoginSuccess}
+            onNavigateToLogin={() => setCurrentScreen("login")}
             onContinueAsGuest={handleContinueAsGuest}
           />
         );
@@ -115,12 +174,20 @@ export default function App() {
             onNavigate={setCurrentScreen}
             accountNumber={accountNumber}
             token={token}
-            initialMode={isGuest ? "guest" : "customer"}
+            isGuest={isGuest}
+            initialMode={!isGuest && Boolean(token) ? "customer" : "guest"}
           />
         );
       case "outages":
         return <OutageMapScreen onNavigate={setCurrentScreen} />;
       case "bill-details":
+        if (isGuest || !token) {
+          return renderProtectedPrompt(
+            "Account Sign In Required",
+            "Viewing itemized billing statements, tariffs, and payment records requires an authenticated EDL customer account.",
+            "receipt-outline"
+          );
+        }
         return (
           <BillDetailsScreen
             onNavigate={setCurrentScreen}
@@ -129,6 +196,13 @@ export default function App() {
           />
         );
       case "consumption":
+        if (isGuest || !token) {
+          return renderProtectedPrompt(
+            "Consumption Analytics Restricted",
+            "Your 12-month electricity consumption trends and historical usage are protected. Please sign in to view.",
+            "stats-chart-outline"
+          );
+        }
         return (
           <ConsumptionScreen
             onNavigate={setCurrentScreen}
@@ -167,9 +241,12 @@ export default function App() {
   if (!isReady) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.darkMaroon} />
-        <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
-          <Text style={{ color: "#FFFFFF", fontWeight: "bold" }}>⚡ EDL CARE ASSISTANT</Text>
+        <StatusBar style="light" />
+        <View style={[styles.container, { justifyContent: "center", alignItems: "center", backgroundColor: Colors.darkMaroon }]}>
+          <EDLCareLogo variant="badge" size={76} style={{ marginBottom: 16 }} />
+          <Text style={{ color: "#FFFFFF", fontWeight: "bold", fontSize: 13, letterSpacing: 0.5 }}>
+            EDL CARE ASSISTANT
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -177,17 +254,22 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.darkMaroon} />
+      <StatusBar style="light" />
       <View style={styles.container}>{renderScreen()}</View>
 
-      {/* Global Bottom Tab Bar (shown when not on login screen) */}
-      {currentScreen !== "login" && (
+      {/* Global Bottom Tab Bar (hidden during login, registration or chatbot) */}
+      {currentScreen !== "login" && currentScreen !== "register" && currentScreen !== "chatbot" && (
         <View style={styles.bottomBar}>
           <TouchableOpacity
             style={styles.tabItem}
+            activeOpacity={0.7}
             onPress={() => setCurrentScreen("dashboard")}
           >
-            <Text style={styles.tabIcon}>⚡</Text>
+            <Ionicons
+              name={currentScreen === "dashboard" ? "home" : "home-outline"}
+              size={22}
+              color={currentScreen === "dashboard" ? Colors.primaryMaroon : "#8E8E93"}
+            />
             <Text style={[styles.tabLabel, currentScreen === "dashboard" && styles.tabLabelActive]}>
               Home
             </Text>
@@ -195,28 +277,39 @@ export default function App() {
 
           <TouchableOpacity
             style={styles.tabItem}
+            activeOpacity={0.7}
             onPress={() => setCurrentScreen("outages")}
           >
-            <Text style={styles.tabIcon}>🗺️</Text>
+            <Ionicons
+              name={currentScreen === "outages" ? "map" : "map-outline"}
+              size={22}
+              color={currentScreen === "outages" ? Colors.primaryMaroon : "#8E8E93"}
+            />
             <Text style={[styles.tabLabel, currentScreen === "outages" && styles.tabLabelActive]}>
               Outages
             </Text>
           </TouchableOpacity>
 
-          {/* Center Chat Assistant Bubble */}
+          {/* Center Raised Chat Assistant Bubble */}
           <TouchableOpacity
             style={styles.centerChatBubble}
+            activeOpacity={0.85}
             onPress={() => setCurrentScreen("chatbot")}
           >
-            <Text style={styles.centerChatIcon}>🤖</Text>
+            <Ionicons name="chatbubbles" size={24} color="#FFFFFF" />
             <Text style={styles.centerChatLabel}>AI Chat</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.tabItem}
+            activeOpacity={0.7}
             onPress={() => setCurrentScreen("complaints")}
           >
-            <Text style={styles.tabIcon}>🚨</Text>
+            <Ionicons
+              name={currentScreen === "complaints" ? "warning" : "warning-outline"}
+              size={22}
+              color={currentScreen === "complaints" ? Colors.primaryMaroon : "#8E8E93"}
+            />
             <Text style={[styles.tabLabel, currentScreen === "complaints" && styles.tabLabelActive]}>
               Breakdown
             </Text>
@@ -224,10 +317,15 @@ export default function App() {
 
           <TouchableOpacity
             style={styles.tabItem}
+            activeOpacity={0.7}
             onPress={() => (isGuest ? setCurrentScreen("login") : handleLogout())}
           >
-            <Text style={styles.tabIcon}>{isGuest ? "🔑" : "🚪"}</Text>
-            <Text style={[styles.tabLabel, currentScreen === "login" && styles.tabLabelActive]}>
+            <Ionicons
+              name={isGuest ? "log-in-outline" : "log-out-outline"}
+              size={22}
+              color="#8E8E93"
+            />
+            <Text style={styles.tabLabel}>
               {isGuest ? "Sign In" : "Sign Out"}
             </Text>
           </TouchableOpacity>
@@ -240,66 +338,154 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.darkMaroon,
+    backgroundColor: "#650B24",
   },
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundLight,
+    backgroundColor: "#F4F4F7",
   },
   bottomBar: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    borderTopColor: "rgba(0, 0, 0, 0.06)",
+    paddingTop: 8,
+    paddingBottom: Platform.OS === "ios" ? 22 : 10,
+    paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "space-around",
-    elevation: 8,
+    elevation: 12,
     shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
   tabItem: {
     alignItems: "center",
     justifyContent: "center",
     flex: 1,
-  },
-  tabIcon: {
-    fontSize: 18,
+    paddingVertical: 2,
   },
   tabLabel: {
     fontSize: 10,
-    color: Colors.textSecondary,
+    color: "#8E8E93",
     fontWeight: "600",
-    marginTop: 2,
+    marginTop: 3,
+    letterSpacing: 0.2,
   },
   tabLabelActive: {
-    color: Colors.primaryMaroon,
-    fontWeight: "bold",
+    color: "#650B24",
+    fontWeight: "700",
   },
   centerChatBubble: {
-    backgroundColor: Colors.primaryMaroon,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    backgroundColor: "#650B24",
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -20,
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-  },
-  centerChatIcon: {
-    fontSize: 20,
+    marginTop: -22,
+    elevation: 8,
+    shadowColor: "#650B24",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.25)",
   },
   centerChatLabel: {
     color: "#FFFFFF",
     fontSize: 8,
     fontWeight: "bold",
     marginTop: 1,
+    letterSpacing: 0.3,
+  },
+  protectedPromptContainer: {
+    flex: 1,
+    backgroundColor: "#F4F4F7",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  protectedCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    width: "100%",
+    maxWidth: 380,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.04)",
+  },
+  protectedIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: "#FDF2F4",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(101, 11, 36, 0.15)",
+  },
+  protectedTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1E293B",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  protectedSubtitle: {
+    fontSize: 13,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 20,
+  },
+  protectedPrimaryBtn: {
+    backgroundColor: "#650B24",
+    width: "100%",
+    paddingVertical: 13,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+    elevation: 2,
+  },
+  protectedPrimaryBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  protectedSecondaryBtn: {
+    backgroundColor: "#FFFFFF",
+    width: "100%",
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#650B24",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  protectedSecondaryBtnText: {
+    color: "#650B24",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  protectedBackLink: {
+    paddingVertical: 6,
+  },
+  protectedBackLinkText: {
+    color: "#64748B",
+    fontSize: 12.5,
+    fontWeight: "600",
   },
 });

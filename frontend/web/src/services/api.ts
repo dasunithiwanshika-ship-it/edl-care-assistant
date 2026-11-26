@@ -67,10 +67,48 @@ class ApiClient {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Login failed" }));
-      throw new Error(err.detail || "Invalid demo credentials");
+      let errorMsg = err.detail;
+      if (Array.isArray(err.detail)) {
+        errorMsg = err.detail.map((e: any) => e.msg || e.message).join(", ");
+      }
+      throw new Error(errorMsg || "Invalid credentials");
     }
     const data = await res.json();
     this.setToken(data.access_token);
+    return data;
+  }
+
+  public async register(payload: {
+    full_name: string;
+    email: string;
+    phone: string;
+    password: string;
+    username?: string;
+  }): Promise<{
+    access_token: string;
+    token_type: string;
+    username: string;
+    full_name: string;
+    account_number: string;
+    mode: string;
+  }> {
+    const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Registration failed" }));
+      let errorMsg = err.detail;
+      if (Array.isArray(err.detail)) {
+        errorMsg = err.detail.map((e: any) => e.msg || e.message).join(", ");
+      }
+      throw new Error(errorMsg || "Registration failed. Please check your details.");
+    }
+    const data = await res.json();
+    if (data.access_token) {
+      this.setToken(data.access_token);
+    }
     return data;
   }
 

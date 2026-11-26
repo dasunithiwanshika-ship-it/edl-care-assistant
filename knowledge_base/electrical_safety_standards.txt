@@ -1,8 +1,8 @@
-# ELECTRICITY DISTRIBUTION LANKA (EDL)
-## ELECTRICAL SAFETY GUIDELINES & EMERGENCY PROTOCOLS
-Source: EDL Public Safety & Operational Health Division
-Document ID: EDL-SAF-STD-2026
-Category: Electrical Safety & Hazard Prevention
+# ELECTRICITY DISTRIBUTION LANKA (EDL) - PROTOTYPE KNOWLEDGE BASE
+[CURATED DEMONSTRATION DOCUMENT – NOT AN OFFICIAL UTILITY PUBLICATION]
+PROVENANCE NOTICE: This document contains curated demonstration safety guidelines modeled on Sri Lankan and international utility engineering practices for software evaluation only. It has not been independently verified against current statutory publications.
+Document ID: EDL-SAF-STD-2026-DEMO
+Category: Electrical Safety & Hazard Prevention (Demonstration Reference)
 
 ### 1. Mandatory Domestic Safety Measures
 Electricity is vital for daily life but carries severe hazards of electrocution, flash burns, and domestic fires if safety standards are neglected.

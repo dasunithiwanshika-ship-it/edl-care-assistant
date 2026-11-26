@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  ActivityIndicator
+  Platform
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
 import { getOutagesApi } from "../services/api";
 
@@ -47,73 +47,97 @@ export const OutageMapScreen: React.FC<OutageMapProps> = ({ onNavigate }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Top Rounded Header Container */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => onNavigate("dashboard")}>
-          <Text style={styles.backBtnText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Grid Outage Monitor</Text>
-        <View style={{ width: 40 }} />
-      </View>
+        <View style={styles.navRow}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            activeOpacity={0.7}
+            onPress={() => onNavigate("dashboard")}
+          >
+            <Ionicons name="arrow-back" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
 
-      {/* Simulated Map Visualizer */}
-      <View style={styles.mapCanvas}>
-        <View style={styles.mapOverlayTop}>
-          <Text style={styles.mapLocationBadge}>🇱🇰 Sri Lanka Transmission Grid</Text>
+          <TouchableOpacity
+            style={styles.gridPill}
+            activeOpacity={0.8}
+            onPress={() => onNavigate("dashboard")}
+          >
+            <Ionicons name="grid" size={16} color="#FFFFFF" />
+            <Text style={styles.gridPillText}>Grid</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Stylized Island Pin Simulation */}
-        <View style={styles.simulatedPinsArea}>
-          {filtered.map((item) => (
+        <View style={styles.heroSection}>
+          <Text style={styles.heroSubtitle}>LIVE TRANSMISSION & FEEDER MONITOR</Text>
+          <Text style={styles.heroTitle}>Grid Outages</Text>
+        </View>
+      </View>
+
+      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
+        {/* Simulated Map Visualizer Card */}
+        <View style={styles.mapCard}>
+          <View style={styles.mapOverlayTop}>
+            <Ionicons name="pulse" size={12} color="#10B981" style={{ marginRight: 4 }} />
+            <Text style={styles.mapLocationBadge}>Sri Lanka National Transmission Grid</Text>
+          </View>
+
+          {/* Stylized Island Pin Simulation */}
+          <View style={styles.simulatedPinsArea}>
+            {filtered.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.mapPin,
+                  item.outage_type === "breakdown" ? styles.pinBreakdown : styles.pinPlanned,
+                  selectedOutage?.id === item.id && styles.pinSelected
+                ]}
+                onPress={() => setSelectedOutage(item)}
+              >
+                <Ionicons name="flash" size={13} color="#FFFFFF" />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Selected Bottom Strip */}
+          {selectedOutage && (
+            <View style={styles.mapBottomStrip}>
+              <View>
+                <Text style={styles.stripArea}>{selectedOutage.area}</Text>
+                <Text style={styles.stripFeeder}>Feeder: {selectedOutage.feeder_name}</Text>
+              </View>
+              <Text style={styles.stripEta}>ETA: {selectedOutage.estimated_restoration}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Filter Capsule Chips */}
+        <View style={styles.filterRow}>
+          {(["all", "planned", "breakdown"] as const).map((t) => (
             <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.mapPin,
-                item.outage_type === "breakdown" ? styles.pinBreakdown : styles.pinPlanned,
-                selectedOutage?.id === item.id && styles.pinSelected
-              ]}
-              onPress={() => setSelectedOutage(item)}
+              key={t}
+              style={[styles.filterTab, filter === t && styles.filterTabActive]}
+              activeOpacity={0.7}
+              onPress={() => setFilter(t)}
             >
-              <Text style={styles.mapPinText}>⚡</Text>
+              <Text style={[styles.filterTabText, filter === t && styles.filterTabTextActive]}>
+                {t.toUpperCase()} ({outages.filter((o) => t === "all" || o.outage_type === t).length})
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Selected Bottom Strip */}
-        {selectedOutage && (
-          <View style={styles.mapBottomStrip}>
-            <Text style={styles.stripArea}>{selectedOutage.area}</Text>
-            <Text style={styles.stripEta}>ETA: {selectedOutage.estimated_restoration}</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Filter Tabs */}
-      <View style={styles.filterRow}>
-        {(["all", "planned", "breakdown"] as const).map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.filterTab, filter === t && styles.filterTabActive]}
-            onPress={() => setFilter(t)}
-          >
-            <Text style={[styles.filterTabText, filter === t && styles.filterTabTextActive]}>
-              {t.toUpperCase()} ({outages.filter(o => t === "all" || o.outage_type === t).length})
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Outage Incident List */}
-      <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
+        {/* Outage Incident List */}
         {filtered.length === 0 && !loading && (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>⚡</Text>
+            <Ionicons name="flash-outline" size={36} color="#9CA3AF" style={{ marginBottom: 6 }} />
             <Text style={styles.emptyTitle}>No Outages Reported</Text>
             <Text style={styles.emptyDesc}>
               No power breakdowns or scheduled maintenance match your selected filter.
             </Text>
           </View>
         )}
+
         {filtered.map((item) => (
           <TouchableOpacity
             key={item.id}
@@ -121,6 +145,7 @@ export const OutageMapScreen: React.FC<OutageMapProps> = ({ onNavigate }) => {
               styles.incidentCard,
               selectedOutage?.id === item.id && styles.incidentCardActive
             ]}
+            activeOpacity={0.8}
             onPress={() => setSelectedOutage(item)}
           >
             <View style={styles.incidentRowTop}>
@@ -159,47 +184,99 @@ export const OutageMapScreen: React.FC<OutageMapProps> = ({ onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundLight,
+    backgroundColor: "#F4F4F7",
   },
   header: {
-    backgroundColor: Colors.primaryMaroon,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+    backgroundColor: "#650B24",
+    paddingTop: Platform.OS === "ios" ? 14 : 16,
+    paddingHorizontal: 20,
+    paddingBottom: 22,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  navRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 14,
   },
-  backBtnText: {
+  backBtn: {
+    paddingVertical: 4,
+    paddingRight: 12,
+  },
+  gridPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  gridPillText: {
     color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "bold",
+    fontSize: 14,
+    fontWeight: "600",
   },
-  headerTitle: {
+  heroSection: {
+    alignItems: "flex-start",
+    paddingTop: 2,
+  },
+  heroSubtitle: {
+    color: "rgba(255, 255, 255, 0.85)",
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  heroTitle: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: "bold",
+    marginTop: 4,
+    letterSpacing: 0.5,
   },
-  mapCanvas: {
-    height: 180,
+  scrollArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  mapCard: {
+    height: 190,
     backgroundColor: "#E2E8F0",
+    borderRadius: 22,
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   mapOverlayTop: {
     position: "absolute",
-    top: 8,
+    top: 10,
     left: 12,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
   },
   mapLocationBadge: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: "bold",
-    color: Colors.textPrimary,
+    color: "#1E293B",
   },
   simulatedPinsArea: {
     flexDirection: "row",
@@ -207,14 +284,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   mapPin: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#FFFFFF",
-    elevation: 3,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   pinBreakdown: {
     backgroundColor: "#DC2626",
@@ -224,91 +305,117 @@ const styles = StyleSheet.create({
   },
   pinSelected: {
     transform: [{ scale: 1.25 }],
-    borderColor: Colors.gold,
-  },
-  mapPinText: {
-    fontSize: 12,
-    color: "#FFFFFF",
+    borderColor: "#F5C518",
   },
   mapBottomStrip: {
     position: "absolute",
-    bottom: 8,
+    bottom: 10,
     left: 12,
     right: 12,
-    backgroundColor: "rgba(255,255,255,0.95)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   stripArea: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "bold",
-    color: Colors.textPrimary,
+    color: "#1E293B",
+  },
+  stripFeeder: {
+    fontSize: 10.5,
+    color: "#64748B",
   },
   stripEta: {
-    fontSize: 10,
-    color: Colors.success,
+    fontSize: 11,
+    color: "#10B981",
     fontWeight: "bold",
   },
   filterRow: {
     flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    gap: 8,
+    marginBottom: 14,
   },
   filterTab: {
     flex: 1,
-    paddingVertical: 6,
+    paddingVertical: 8,
     alignItems: "center",
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.06)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
   filterTabActive: {
-    backgroundColor: Colors.primaryMaroon,
+    backgroundColor: "#650B24",
+    borderColor: "#650B24",
   },
   filterTabText: {
     fontSize: 11,
     fontWeight: "bold",
-    color: Colors.textSecondary,
+    color: "#64748B",
   },
   filterTabTextActive: {
     color: "#FFFFFF",
   },
-  listScroll: {
-    flex: 1,
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 30,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    marginVertical: 10,
   },
-  listContent: {
-    padding: 12,
-    gap: 10,
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#1E293B",
+  },
+  emptyDesc: {
+    fontSize: 12,
+    color: "#64748B",
+    textAlign: "center",
+    marginTop: 4,
   },
   incidentCard: {
-    backgroundColor: Colors.cardLight,
-    padding: 14,
-    borderRadius: 14,
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 22,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: "rgba(0, 0, 0, 0.04)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   incidentCardActive: {
-    borderColor: Colors.primaryMaroon,
-    backgroundColor: "#FFF5F6",
+    borderColor: "#650B24",
+    borderWidth: 1.5,
   },
   incidentRowTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 6,
   },
   incidentArea: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "bold",
-    color: Colors.textPrimary,
+    color: "#1E293B",
   },
   badgeType: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
   badgeBreakdown: {
     backgroundColor: "#FEE2E2",
@@ -325,55 +432,34 @@ const styles = StyleSheet.create({
     color: "#991B1B",
   },
   badgeTextPlanned: {
-    color: "#92400E",
+    color: "#B45309",
   },
   feederText: {
     fontSize: 12,
-    color: Colors.primaryMaroon,
     fontWeight: "600",
-    marginTop: 4,
+    color: "#650B24",
+    marginBottom: 4,
   },
   reasonText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 2,
+    fontSize: 13,
+    color: "#64748B",
+    lineHeight: 18,
+    marginBottom: 10,
   },
   incidentFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopColor: "rgba(0, 0, 0, 0.04)",
   },
   affectedText: {
-    fontSize: 10,
-    color: Colors.textSecondary,
+    fontSize: 11,
+    color: "#64748B",
   },
   etaText: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: Colors.success,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 36,
-    paddingHorizontal: 20,
-  },
-  emptyIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-  },
-  emptyDesc: {
     fontSize: 11,
-    color: Colors.textSecondary,
-    textAlign: "center",
-    marginTop: 4,
+    fontWeight: "600",
+    color: "#10B981",
   },
 });

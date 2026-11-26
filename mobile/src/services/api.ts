@@ -39,7 +39,7 @@ export function getResolvedApiBaseUrl(): string {
     return envUrl.endsWith("/api") ? envUrl : `${envUrl.replace(/\/$/, "")}/api`;
   }
 
-  // 2. Auto-detect host IP from Expo Constants (works automatically on physical devices with Expo Go)
+  // 2. Auto-detect host IP from Expo Constants (works automatically on physical devices with Expo Go on LAN)
   const hostUri =
     Constants.expoConfig?.hostUri ||
     (Constants as any)?.manifest2?.extra?.expoClient?.hostUri ||
@@ -47,7 +47,9 @@ export function getResolvedApiBaseUrl(): string {
 
   if (hostUri && typeof hostUri === "string") {
     const hostIp = hostUri.split(":")[0];
-    if (hostIp && hostIp !== "localhost" && hostIp !== "127.0.0.1") {
+    // Only use hostIp if it is a numeric LAN IPv4 address (avoid tunnel domains like *.exp.direct / *.ngrok)
+    const isIpv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostIp);
+    if (isIpv4 && hostIp !== "127.0.0.1") {
       return `http://${hostIp}:8000/api`;
     }
   }
@@ -57,7 +59,13 @@ export function getResolvedApiBaseUrl(): string {
     return "http://10.0.2.2:8000/api";
   }
 
-  // 4. Default iOS simulator / web
+  // 4. Default host PC LAN IP fallback for physical devices (iOS / Android)
+  const defaultLanIp = "10.84.172.104";
+  if (Platform.OS === "ios") {
+    return `http://${defaultLanIp}:8000/api`;
+  }
+
+  // 5. Default web loopback
   return "http://127.0.0.1:8000/api";
 }
 
@@ -75,7 +83,7 @@ export function getApiBaseUrl(): string {
 /**
  * Common fetch helper with auto token injection and timeout
  */
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 8000): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 15000): Promise<Response> {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -86,10 +94,13 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
     });
     return res;
   } catch (err: any) {
-    if (err.name === "AbortError") {
-      throw new Error(`Request timed out after ${timeoutMs / 1000}s`);
+    const isTimeout =
+      err.name === "AbortError" ||
+      (err.message && (err.message.includes("canceled") || err.message.includes("aborted")));
+    if (isTimeout) {
+      throw new Error(`The assistant took longer than ${timeoutMs / 1000}s to respond. Please try again.`);
     }
-    throw new Error(`Network request failed: ${err.message || "Connection refused"}`);
+    throw new Error(`Cannot connect to ${url}: ${err.message || "Connection refused"}`);
   } finally {
     clearTimeout(id);
   }
@@ -117,23 +128,79 @@ export async function checkBackendHealth() {
   }
 }
 
+export interface RegisterPayload {
+  full_name: string;
+  email: string;
+  phone: string;
+  password: string;
+  username?: string;
+  premises_address?: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  username: string;
+  full_name: string;
+  account_number: string;
+  mode: string;
+}
+
 /**
- * Customer authentication
+ * Customer authentication (supports username, 10-digit account number, or registered email)
  */
-export async function loginApi(username: string, password: string = "demo123") {
+export async function loginApi(username: string, password: string = "demo123"): Promise<AuthResponse> {
   const baseUrl = getApiBaseUrl();
   const res = await fetchWithTimeout(`${baseUrl}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  }, 5000);
+    body: JSON.stringify({ username: username.trim(), password }),
+  }, 6000);
 
   if (res.ok) {
     return await res.json();
   }
 
   const errData = await res.json().catch(() => ({}));
-  throw new Error(errData.detail || "Invalid account number or password");
+  let errorMsg = errData.detail;
+  if (Array.isArray(errData.detail)) {
+    errorMsg = errData.detail.map((e: any) => e.msg || e.message).join(", ");
+  }
+  throw new Error(errorMsg || "Invalid account number, email or password");
+}
+
+/**
+ * New customer registration
+ */
+export async function registerApi(payload: RegisterPayload): Promise<AuthResponse> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetchWithTimeout(
+    `${baseUrl}/auth/register`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        full_name: payload.full_name.trim(),
+        email: payload.email.trim().toLowerCase(),
+        phone: payload.phone.trim(),
+        password: payload.password,
+        username: payload.username || payload.email.trim().toLowerCase(),
+        premises_address: payload.premises_address || "Colombo, Sri Lanka",
+      }),
+    },
+    7000
+  );
+
+  if (res.ok) {
+    return await res.json();
+  }
+
+  const errData = await res.json().catch(() => ({}));
+  let errorMsg = errData.detail;
+  if (Array.isArray(errData.detail)) {
+    errorMsg = errData.detail.map((e: any) => e.msg || e.message).join(", ");
+  }
+  throw new Error(errorMsg || "Registration failed. Please verify your details.");
 }
 
 /**
@@ -411,7 +478,7 @@ export async function sendChatMessageApi(
       account_number: accountNumber || "0412345678",
       session_id: sessionId
     })
-  }, 12000);
+  }, 35000);
 
   if (res.ok) {
     return await res.json();

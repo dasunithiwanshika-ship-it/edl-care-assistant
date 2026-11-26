@@ -19,7 +19,10 @@ def extract_text_from_file(file_path: str) -> str:
             return f.read()
     elif ext == ".pdf":
         reader = PdfReader(file_path)
-        pages_text = []
+        pages_text = [
+            "[CURATED DEMONSTRATION DOCUMENT – NOT AN OFFICIAL UTILITY PUBLICATION]\n"
+            "PROVENANCE NOTICE: Modeled on Sri Lankan utility customer charter guidelines for software demonstration purposes only. Not independently verified against current official publications."
+        ]
         for page in reader.pages:
             text = page.extract_text()
             if text:

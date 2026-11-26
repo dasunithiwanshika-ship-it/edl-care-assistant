@@ -7,7 +7,7 @@
 
 ## 📱 1. Architecture Overview
 
-The mobile client is built on **React Native** and **Expo (SDK 51)**, sharing the same live FastAPI backend gateway (`/api`), SQLite database (`edl_care.db`), and Option C AI architecture as the web portal.
+The mobile client is built on **React Native** and **Expo (SDK 58)**, sharing the same live FastAPI backend gateway (`/api`), SQLite database (`edl_care.db`), and Option C AI architecture as the web portal.
 
 ```
                     ┌───────────────────────────────┐
@@ -41,7 +41,8 @@ The application dynamically detects and resolves the correct backend host addres
 | Device / Environment | Resolved API Base URL | Behavior |
 |---|---|---|
 | **Custom Environment Variable** | `$EXPO_PUBLIC_API_URL` | User-defined URL (e.g. ngrok tunnel or specific LAN IP) |
-| **Physical Phone (Expo Go)** | `http://<LAN_IP>:8000/api` | **Auto-detected** from Expo `Constants.expoConfig.hostUri` (e.g. `http://10.84.172.104:8000/api`) |
+| **Physical Phone (Expo Go, LAN mode)** | `http://<LAN_IP>:8000/api` | Auto-detected from Expo `Constants.expoConfig.hostUri` |
+| **Physical Phone (Expo Go, tunnel mode)** | `http://<LAN_IP>:8000/api` | Set `EXPO_PUBLIC_API_URL`; the Expo tunnel carries the app bundle, not backend requests |
 | **Android Emulator** | `http://10.0.2.2:8000/api` | Uses standard Android loopback alias to host machine |
 | **iOS Simulator & Web** | `http://127.0.0.1:8000/api` | Standard local loopback |
 | **Offline Mode** | Fallback records | Graceful offline mode if backend server is unreachable |
@@ -53,9 +54,9 @@ If your mobile device is on a different Wi-Fi subnet or you wish to override the
 ipconfig
 # (e.g., IPv4 Address: 10.84.172.104)
 
-# 2. Launch Expo with the explicit backend URL:
+# 2. Launch Expo with the explicit backend URL (replace with your current Wi-Fi IP):
 $env:EXPO_PUBLIC_API_URL="http://10.84.172.104:8000/api"
-npx expo start
+npx expo start --tunnel ngrok --clear
 ```
 
 ---
@@ -127,7 +128,9 @@ node mobile/tests/test_mobile_integration.mjs
 ### Launching the Expo Development Server
 ```bash
 cd mobile
-npx expo start
+# Replace this IP with the computer's current Wi-Fi IPv4 address from `ipconfig`.
+$env:EXPO_PUBLIC_API_URL="http://10.84.172.104:8000/api"
+npx expo start --tunnel ngrok --clear
 ```
 - Press `w` to open in browser web view.
-- Scan the terminal QR code with **Expo Go** on Android or iOS.
+- Scan the new terminal QR code with **Expo Go SDK 58** on Android or iOS. Keep the phone and computer on the same Wi-Fi so the phone can reach the backend API.

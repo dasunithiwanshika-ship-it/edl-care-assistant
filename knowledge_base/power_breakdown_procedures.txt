@@ -1,8 +1,8 @@
-# ELECTRICITY DISTRIBUTION LANKA (EDL)
-## POWER BREAKDOWN PROCEDURES & GRID OUTAGE RESTORATION
-Source: EDL System Operations, Grid Management & Customer Service Directorate
-Document ID: EDL-OPS-OUT-2026
-Category: Outage Management & Breakdown Reporting
+# ELECTRICITY DISTRIBUTION LANKA (EDL) - PROTOTYPE KNOWLEDGE BASE
+[CURATED DEMONSTRATION DOCUMENT – NOT AN OFFICIAL UTILITY PUBLICATION]
+PROVENANCE NOTICE: This document contains curated demonstration procedures modeled on Sri Lankan utility operations for software demonstration and academic evaluation only. It does not represent binding or verified real-world operational commitments.
+Document ID: EDL-OPS-OUT-2026-DEMO
+Category: Outage Management & Breakdown Reporting (Demonstration Reference)
 
 ### 1. Classification of Power Disruptions
 EDL classifies electricity disruptions into two distinct categories:

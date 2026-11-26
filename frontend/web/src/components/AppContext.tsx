@@ -17,6 +17,17 @@ interface AppContextType {
   consumptionData: ConsumptionDataPoint[];
   refreshAccount: () => Promise<void>;
   login: (username: string, password: string) => Promise<boolean>;
+  register: (data: {
+    fullName: string;
+    email: string;
+    phone: string;
+    password: string;
+  }) => Promise<{
+    access_token: string;
+    account_number: string;
+    username: string;
+    full_name: string;
+  }>;
   logout: () => void;
   payBill: (amount: number) => Promise<void>;
   isChatOpen: boolean;
@@ -96,7 +107,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       const billsData = await api.getMyBills().catch(() => []);
-      if (Array.isArray(billsData) && billsData.length > 0) {
+      if (Array.isArray(billsData)) {
         setBills(billsData);
       }
 
@@ -169,13 +180,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const register = async (data: {
+    fullName: string;
+    email: string;
+    phone: string;
+    password: string;
+  }) => {
+    try {
+      const res = await api.register({
+        full_name: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        username: data.email.trim().toLowerCase(),
+      });
+      if (res.access_token) {
+        setIsLoggedIn(true);
+        setChatMode("customer");
+        await refreshAccount();
+      }
+      return res;
+    } catch (error) {
+      console.error("Registration failed:", error);
+      throw error;
+    }
+  };
+
   const logout = () => {
     api.logout();
     setIsLoggedIn(false);
     setChatMode("guest");
-    setAccount(MOCK_CUSTOMER_ACCOUNT);
     setBills([]);
-    setConsumptionData(MOCK_CONSUMPTION_DATA);
+    setConsumptionData([]);
   };
 
   const payBill = async (amount: number) => {
@@ -213,6 +249,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         consumptionData,
         refreshAccount,
         login,
+        register,
         logout,
         payBill,
         isChatOpen,

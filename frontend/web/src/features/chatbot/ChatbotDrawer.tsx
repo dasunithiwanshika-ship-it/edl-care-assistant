@@ -48,8 +48,11 @@ export const ChatbotDrawer: React.FC = () => {
     setPaymentModalOpen,
     setBillModalOpen,
     chatMode,
-    setChatMode
+    setChatMode,
+    isLoggedIn
   } = useApp();
+
+  const effectiveMode: ChatMode = isLoggedIn ? "customer" : "guest";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -129,7 +132,7 @@ export const ChatbotDrawer: React.FC = () => {
       // Send query to FastAPI backend with bearer token, mode, language, and session ID
       const data = await api.sendChat({
         message: text,
-        mode: chatMode,
+        mode: effectiveMode,
         language: language,
         account_number: account?.accountNumber || "0412345678",
         session_id: sessionIdRef.current,
@@ -186,10 +189,7 @@ export const ChatbotDrawer: React.FC = () => {
     ]);
   };
 
-  const toggleMode = (targetMode: ChatMode) => {
-    if (targetMode === chatMode) return;
-    setChatMode(targetMode);
-  };
+  // Automatic authentication detection - manual mode switching removed
 
   return (
     <>
@@ -291,59 +291,12 @@ export const ChatbotDrawer: React.FC = () => {
               </div>
             </div>
 
-            {/* Option C: Dual Mode Selector Bar */}
-            <div className="flex items-center justify-between bg-black/25 p-1 rounded-xl border border-white/15">
-              <button
-                onClick={() => toggleMode("guest")}
-                className={`flex-1 py-1 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                  chatMode === "guest"
-                    ? "bg-white text-brand-maroon shadow-sm"
-                    : "text-white/80 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <Unlock className="w-3.5 h-3.5" />
-                <span>Guest Mode</span>
-              </button>
-
-              <button
-                onClick={() => toggleMode("customer")}
-                className={`flex-1 py-1 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                  chatMode === "customer"
-                    ? "bg-brand-gold text-brand-darkMaroon shadow-sm"
-                    : "text-white/80 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Customer Mode</span>
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Mode Context Banner */}
-          <div className={`px-4 py-2 border-b text-xs flex items-center justify-between transition-colors ${
-            chatMode === "customer" 
-              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
-              : "bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
-          }`}>
-            <span className="flex items-center gap-1.5 font-medium truncate">
-              {chatMode === "customer" ? (
-                <>
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Authenticated: <strong>Account #{account?.accountNumber || "0412345678"}</strong> ({account?.nickname || "Home"})</span>
-                </>
-              ) : (
-                <>
-                  <Unlock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                  <span>Guest Mode: <strong>Public Knowledge Base</strong></span>
-                </>
-              )}
-            </span>
-            <button
-              onClick={() => toggleMode(chatMode === "guest" ? "customer" : "guest")}
-              className="text-[10px] font-bold text-brand-maroon dark:text-brand-gold hover:underline shrink-0 ml-2"
-            >
-              {chatMode === "guest" ? "Switch to Customer →" : "Switch to Guest →"}
-            </button>
+            {isLoggedIn && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15 text-emerald-200 text-[11px] font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                <span>Verified Account #{account?.accountNumber || "0412345678"}</span>
+              </div>
+            )}
           </div>
 
           {/* 3. Conversation Message History */}
@@ -485,21 +438,15 @@ export const ChatbotDrawer: React.FC = () => {
                   )}
 
                   {/* Action Button for Login Gate */}
-                  {msg.actionRequired === "login" && chatMode === "guest" && (
+                  {msg.actionRequired === "login" && (
                     <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={() => setChatMode("customer")}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-xs transition-colors"
-                      >
-                        <ShieldCheck className="w-3 h-3 text-amber-300" />
-                        <span>Switch to Customer Mode</span>
-                      </button>
                       <a
                         href="/login"
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                        className="px-4 py-2 rounded-xl bg-maroon-gradient text-white text-xs font-bold flex items-center gap-2 shadow-md hover:opacity-95 transition-all"
                       >
-                        <span>Customer Sign In</span>
-                        <ArrowRight className="w-3 h-3" />
+                        <Lock className="w-3.5 h-3.5 text-brand-gold" />
+                        <span>Sign In to Customer Account</span>
+                        <ArrowRight className="w-3.5 h-3.5 ml-1" />
                       </a>
                     </div>
                   )}

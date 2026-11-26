@@ -1,8 +1,8 @@
-# ELECTRICITY DISTRIBUTION LANKA (EDL)
-## OFFICIAL DOMESTIC ELECTRICITY TARIFF SCHEDULE (2026)
-Source: Public Utilities Commission of Sri Lanka (PUCSL) Statutory Gazette & EDL Tariff Division
-Document ID: EDL-TRF-DOM-2026-V1
-Category: Tariffs & Billing Rates
+# ELECTRICITY DISTRIBUTION LANKA (EDL) - PROTOTYPE KNOWLEDGE BASE
+[CURATED DEMONSTRATION DOCUMENT – NOT AN OFFICIAL UTILITY PUBLICATION]
+PROVENANCE NOTICE: This document contains curated demonstration reference data modeled on Sri Lankan electricity sector guidelines (PUCSL/CEB) for software demonstration and academic evaluation only. It has not been independently verified against current official statutory publications and must not be treated as confirmed live official tariffs.
+Document ID: EDL-TRF-DOM-2026-DEMO
+Category: Tariffs & Billing Rates (Demonstration Reference)
 
 ### 1. General Domestic Tariff Structure (Customer Category D-1)
 Domestic electricity supply in Sri Lanka is billed on a progressive cumulative monthly block system. Higher consumption brackets incur higher unit rates to incentivize energy conservation and subsidize low-income lifeline consumers.

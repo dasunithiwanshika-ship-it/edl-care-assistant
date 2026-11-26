@@ -230,28 +230,41 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#6c002c] hover:bg-[#550022] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#6c002c] hover:bg-[#550022] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>{isLoading ? "Signing in..." : "Sign in"}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => alert("Registration Portal (Demo)")}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                <Link
+                  href="/register"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/80 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>Register</span>
-                </button>
+                </Link>
+              </div>
+
+              {/* Create an account link */}
+              <div className="text-center pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href="/register"
+                    className="font-bold text-[#6c002c] dark:text-[#f87171] hover:underline inline-flex items-center gap-1"
+                  >
+                    <span>Create an account</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </p>
               </div>
 
               {/* Forgot password link */}
-              <div className="text-center pt-2">
+              <div className="text-center pt-0.5">
                 <button
                   type="button"
                   onClick={() => alert("Password Reset Instructions (Demo)")}
-                  className="text-xs text-slate-600 dark:text-slate-400 hover:text-[#6c002c] hover:underline inline-flex items-center gap-1"
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-[#6c002c] dark:hover:text-[#f87171] hover:underline inline-flex items-center gap-1"
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
                   <span>Forgot your password?</span>

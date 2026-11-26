@@ -25,11 +25,11 @@ class LoginRequest(BaseModel):
     password: str = Field(..., description="Password (demo accounts: demo123)")
 
 class RegisterRequest(BaseModel):
-    username: str
-    email: str
-    password: str
-    full_name: str
-    phone: Optional[str] = "0771234567"
+    full_name: str = Field(..., min_length=2, description="Full name of customer")
+    email: str = Field(..., description="Valid email address")
+    phone: Optional[str] = Field("0771234567", description="Contact phone number")
+    password: str = Field(..., min_length=6, description="Account password")
+    username: Optional[str] = Field(None, description="Optional username; defaults to email")
     account_number: Optional[str] = None
     premises_address: Optional[str] = "Colombo, Sri Lanka"
 

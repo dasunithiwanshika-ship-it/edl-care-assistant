@@ -1,8 +1,8 @@
-# ELECTRICITY DISTRIBUTION LANKA (EDL)
-## ROOFTOP SOLAR PV INTERCONNECTION GUIDELINES & TRANSFORMER CAPACITY
-Source: EDL Renewable Energy Directorate & Sri Lanka Sustainable Energy Authority (SLSEA)
-Document ID: EDL-REN-SOL-2026
-Category: Solar Photovoltaic & Net-Metering Schemes
+# ELECTRICITY DISTRIBUTION LANKA (EDL) - PROTOTYPE KNOWLEDGE BASE
+[CURATED DEMONSTRATION DOCUMENT – NOT AN OFFICIAL UTILITY PUBLICATION]
+PROVENANCE NOTICE: This document contains curated demonstration rooftop solar connection criteria modeled on Sri Lankan renewable energy frameworks (SLSEA) for software demonstration purposes only. It has not been independently verified against current statutory publications.
+Document ID: EDL-REN-SOL-2026-DEMO
+Category: Solar Photovoltaic & Net-Metering Schemes (Demonstration Reference)
 
 ### 1. Rooftop Solar Photovoltaic (PV) Grid Schemes
 Sri Lankan electricity consumers with suitable rooftop area can connect solar PV systems to the national grid under three statutory commercial schemes:
